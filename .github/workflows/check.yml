@@ -58,28 +58,38 @@ jobs:
         # pymupdf backs --check-fonts (it reads the text spans of a rendered PDF);
         # without it that step exits 2 on a missing dependency rather than judging
         # the fonts.
-        run: python3 -m pip install weasyprint pypdf pymupdf Pygments
+        run: python3 -m pip install weasyprint pypdf pymupdf Pygments python-pptx
 
       - name: Run full test suite with render dependencies
         run: python3 scripts/tests/test_build.py
 
-      - name: Verify strict page-count targets
-        # Only the six hard-invariant templates (resume == 2, one-pager == 1
-        # across CN/EN/KO) run in CI. The KO pair also exercises the Korean
-        # render path on Linux (fonts-noto-cjk supplies the glyphs). The
-        # long-doc / portfolio / slides ceilings are soft and checked visually.
+      - name: Verify hard page-count targets and editable PPTX decks
+        # Every HTML template with a non-zero registry ceiling runs here, so a
+        # newly registered hard-page target joins CI automatically. The same
+        # job builds both editable PPTX fallbacks through their installed
+        # runtime dependency instead of only checking their source strings.
         # KAMI_ALLOW_FALLBACK_ONLY=1: CI does not ship commercial fonts
         # (TsangerJinKai02, Charter). Treat fallback-only embedding as a
         # warning instead of a failure so CI can still gate page counts.
         env:
           KAMI_ALLOW_FALLBACK_ONLY: '1'
         run: |
-          python3 scripts/build.py --verify one-pager
-          python3 scripts/build.py --verify one-pager-en
-          python3 scripts/build.py --verify one-pager-ko
-          python3 scripts/build.py --verify resume
-          python3 scripts/build.py --verify resume-en
-          python3 scripts/build.py --verify resume-ko
+          python3 - <<'PY'
+          import subprocess
+          import sys
+
+          sys.path.insert(0, "scripts")
+          from shared import HTML_TEMPLATES
+
+          for name, spec in HTML_TEMPLATES.items():
+              if spec.build_max_pages:
+                  subprocess.run(
+                      [sys.executable, "scripts/build.py", "--verify", name],
+                      check=True,
+                  )
+          PY
+          python3 scripts/build.py --verify slides
+          python3 scripts/build.py --verify slides-en
 
       - name: Check which family actually drew the CJK text
         # Page counts cannot see the typeface. With fonts-noto-cjk installed

@@ -780,6 +780,7 @@ class _HtmlVisibilityParser(HTMLParser):
         *,
         skip_tags: set[str],
         fail_closed: bool,
+        residue_mode: bool = False,
         custom_properties: dict[str, str] | None = None,
     ) -> None:
         super().__init__(convert_charrefs=True)
@@ -794,6 +795,7 @@ class _HtmlVisibilityParser(HTMLParser):
         self._ambiguous_attrs = ambiguous_attrs
         self._skip_tags = skip_tags
         self._fail_closed = fail_closed
+        self._residue_mode = residue_mode
         self._visibility_ambiguous = visibility_ambiguous
         self._skip_depth = 0
         self._ambiguous_depth = 0
@@ -1004,7 +1006,10 @@ class _HtmlVisibilityParser(HTMLParser):
                 for name, expected in self._hidden_attrs
             )
             or "hidden" in attrs_map
-            or attrs_map.get("aria-hidden", "").lower() == "true"
+            or (
+                not self._residue_mode
+                and attrs_map.get("aria-hidden", "").lower() == "true"
+            )
             or bool(classes & self._hidden_classes)
             or attrs_map.get("id", "") in self._hidden_ids
             or inline_hidden
@@ -1156,6 +1161,7 @@ class _VisibleTextParser(_HtmlVisibilityParser):
         visibility_ambiguous: bool,
         *,
         fail_closed: bool,
+        residue_mode: bool = False,
         custom_properties: dict[str, str] | None = None,
     ) -> None:
         super().__init__(
@@ -1170,6 +1176,7 @@ class _VisibleTextParser(_HtmlVisibilityParser):
             visibility_ambiguous,
             skip_tags=self._SKIP_TAGS,
             fail_closed=fail_closed,
+            residue_mode=residue_mode,
             custom_properties=custom_properties,
         )
         self.parts: list[str] = []
@@ -1186,15 +1193,22 @@ def visible_html_evidence(
     raw: str,
     *,
     fail_closed: bool = False,
+    residue_mode: bool = False,
 ) -> tuple[str, bool]:
     custom_properties = _document_custom_properties(raw)
-    parser = _VisibleTextParser(
-        *_css_hidden_filters(
+    css_filters = (
+        _css_hidden_filters(
             raw,
             fail_closed=fail_closed,
             custom_properties=custom_properties,
-        ),
+        )
+        if not residue_mode
+        else (set(), set(), set(), set(), set(), set(), set(), set(), False)
+    )
+    parser = _VisibleTextParser(
+        *css_filters,
         fail_closed=fail_closed,
+        residue_mode=residue_mode,
         custom_properties=custom_properties,
     )
     parser.feed(raw)
@@ -1203,8 +1217,17 @@ def visible_html_evidence(
     return "\n".join(parser.parts), parser._visibility_ambiguous
 
 
-def visible_html_text(raw: str, *, fail_closed: bool = False) -> str:
-    return visible_html_evidence(raw, fail_closed=fail_closed)[0]
+def visible_html_text(
+    raw: str,
+    *,
+    fail_closed: bool = False,
+    residue_mode: bool = False,
+) -> str:
+    return visible_html_evidence(
+        raw,
+        fail_closed=fail_closed,
+        residue_mode=residue_mode,
+    )[0]
 
 
 def _markdown_residue_issues(text: str, *, page: int | None = None) -> list[str]:
@@ -1229,14 +1252,32 @@ def _markdown_text_chunks(path: Path) -> tuple[list[tuple[int | None, str]], str
             reader = PdfReader(str(path))
         except Exception as exc:
             return [], f"could not read PDF text: {exc}"
+        if not reader.pages:
+            return [], "PDF has no pages"
+
+        def page_text(page) -> str:
+            parts: list[str] = []
+
+            def visit_text(text, _cm, _tm, font_dict, _font_size) -> None:
+                base_font = str((font_dict or {}).get("/BaseFont", "")).casefold()
+                if any(
+                    marker in base_font
+                    for marker in ("mono", "courier", "consolas", "menlo")
+                ):
+                    return
+                parts.append(text)
+
+            page.extract_text(visitor_text=visit_text)
+            return "".join(parts)
+
         return [
-            (index, page.extract_text() or "")
+            (index, page_text(page))
             for index, page in enumerate(reader.pages, start=1)
         ], None
 
     raw = path.read_text(encoding="utf-8", errors="replace")
     if suffix in {".html", ".htm"}:
-        return [(None, visible_html_text(raw))], None
+        return [(None, visible_html_text(raw, residue_mode=True))], None
     return [(None, raw)], None
 
 
@@ -1337,6 +1378,11 @@ def check_orphans(paths: list[str]) -> int:
             doc = fitz.open(str(path))
         except Exception as exc:
             print(f"ERROR: {raw}: could not read PDF: {exc}")
+            missing += 1
+            continue
+        if len(doc) == 0:
+            print(f"ERROR: {raw}: PDF has no pages")
+            doc.close()
             missing += 1
             continue
         scanned += 1
@@ -1461,6 +1507,11 @@ def scan_density(paths: list[str], scan_single_page: bool = False) -> tuple[int,
             doc = fitz.open(str(path))
         except Exception as exc:
             print(f"ERROR: {raw}: could not read PDF: {exc}")
+            missing += 1
+            continue
+        if len(doc) == 0:
+            print(f"ERROR: {raw}: PDF has no pages")
+            doc.close()
             missing += 1
             continue
         scanned += 1

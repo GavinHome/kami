@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Quiet daily update check for the installed kami skill.
 #
-# Writes a local daily cache marker, then GETs the public VERSION file on the
-# default branch and compares it to the bundled VERSION. If a newer version
-# exists, prints one line so the agent can relay it. It uploads no user document
-# or task content; any failure is silent, so the check never blocks work.
+# Writes a local daily cache marker, then resolves GitHub's latest published
+# release and compares its tag to the bundled VERSION. If a newer version exists,
+# prints one line so the agent can relay it. It uploads no user document or task
+# content; any failure is silent, so the check never blocks work.
 set -u
 
 SKILL="kami"
 REPO="tw93/Kami"
 DEFAULT_UPDATE_CMD="npx skills add tw93/kami/plugins/kami -a universal -g -y"
-# KAMI_UPDATE_URL overrides the source (used by tests); defaults to the public VERSION.
-REMOTE_URL="${KAMI_UPDATE_URL:-https://raw.githubusercontent.com/${REPO}/main/VERSION}"
+# KAMI_UPDATE_URL overrides the source with a plain version file (used by tests).
+LATEST_RELEASE_URL="https://github.com/${REPO}/releases/latest"
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 local_ver="$(tr -d '[:space:]' < "${root}/VERSION" 2>/dev/null)"
@@ -48,8 +48,16 @@ printf '%s' "${day}" > "${marker}" 2>/dev/null || exit 0   # write first so an o
 rm -f "${cache_dir}"/update-checked-2* 2>/dev/null   # sweep legacy per-day markers
 
 command -v curl >/dev/null 2>&1 || exit 0
-remote_ver="$(curl -fsSL --max-time 3 "${REMOTE_URL}" 2>/dev/null | tr -d '[:space:]')"
+if [ -n "${KAMI_UPDATE_URL:-}" ]; then
+  remote_ver="$(curl -fsSL --max-time 3 "${KAMI_UPDATE_URL}" 2>/dev/null | tr -d '[:space:]')"
+else
+  release_url="$(curl -fsSL --max-time 3 -o /dev/null -w '%{url_effective}' \
+    "${LATEST_RELEASE_URL}" 2>/dev/null)"
+  release_tag="${release_url##*/}"
+  remote_ver="${release_tag#V}"
+fi
 [ -n "${remote_ver}" ] || exit 0
+[[ "${remote_ver}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 0
 [ "${remote_ver}" = "${local_ver}" ] && exit 0
 
 # Only notify when the remote version sorts strictly higher. Numeric-field

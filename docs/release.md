@@ -21,7 +21,7 @@ screenshots. Everyday template, script, and site work does not need it.
   counting the number prefix and bold markers. Check the longest item first; if it
   wraps, cut words instead of splitting the item.
 - Generate the scaffold, then rewrite it:
-  `python3 scripts/draft-release-notes.py V<prev>..V<new> --version V<new> --title "<Codename>"`.
+  `python3 scripts/draft-release-notes.py V<prev>..HEAD --version V<new> --title "<Codename>"`.
   Regroup the raw commit list into product-themed bullets; never paste commit subjects.
 
 ## Part 2 · Release flow
@@ -61,7 +61,7 @@ screenshots. Everyday template, script, and site work does not need it.
   release, and tag the commit that already contains the final refreshed
   `dist/kami.zip`. Never tag a source-only commit and refresh the archive afterward.
 - On tag push, `.github/workflows/release.yml` builds and attaches `dist/kami.zip`,
-  creates the release if missing, and adds the house-style reactions. Do not
+  creates the release if missing, and adds and verifies the house-style reactions. Do not
   `gh release create` by hand: let CI create the placeholder, then set the real title
   and notes with
   `gh release edit V<x> --title "V<x> <Codename>" --notes-file <file>`.

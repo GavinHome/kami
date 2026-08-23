@@ -95,17 +95,30 @@ jobs:
           gh release upload "$TAG" /tmp/kami.zip --clobber
           echo "OK: kami.zip attached to release $TAG"
 
-      - name: Add release reactions
+      - name: Add and verify release reactions
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.tag.outputs.name }}
         run: |
           # Match the house style every release carries: one of each positive
-          # reaction. Idempotent (re-running adds nothing) and non-fatal so a
-          # reaction hiccup never fails an otherwise-good release.
+          # reaction. Duplicate POSTs are harmless on a rerun; the final GET is
+          # the completion proof and fails if any reaction is still absent.
           rid="$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq .id)"
           for r in +1 eyes heart hooray laugh rocket; do
             gh api -X POST "repos/${{ github.repository }}/releases/$rid/reactions" \
               -f content="$r" --jq .content || echo "skip reaction $r"
           done
+          actual="$(gh api --paginate \
+            "repos/${{ github.repository }}/releases/$rid/reactions" \
+            --jq '.[].content')"
+          missing=()
+          for r in +1 eyes heart hooray laugh rocket; do
+            if ! grep -Fxq "$r" <<<"$actual"; then
+              missing+=("$r")
+            fi
+          done
+          if (( ${#missing[@]} )); then
+            echo "ERROR: release reactions missing: ${missing[*]}"
+            exit 1
+          fi
           echo "OK: reactions ensured on release $TAG"

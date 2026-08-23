@@ -68,6 +68,7 @@ from lint import (  # noqa: E402
 )
 from optional_deps import MissingDepError, require_pymupdf  # noqa: E402
 from shared import (  # noqa: E402
+    DIAGRAMS,
     DIAGRAM_TEMPLATES,
     HTML_TEMPLATES,
     MARP_TEMPLATES,
@@ -83,6 +84,8 @@ from shared import (  # noqa: E402
     screen_targets,
 )
 import highlight as highlight_mod  # noqa: E402
+import shared as shared_mod  # noqa: E402
+import verify as verify_mod  # noqa: E402
 from highlight import highlight_code_blocks  # noqa: E402
 from site_facts import (  # noqa: E402
     FULL_PUBLIC_FACT_FILES,
@@ -279,6 +282,29 @@ def test_dist_package_contents() -> None:
           f"entries with no source: {', '.join(sorted(absent)[:5])}")
 
 
+def test_package_failure_preserves_last_good_archive() -> None:
+    """A failed audit must not replace the last archive users can install."""
+    script = REPO_ROOT / "scripts" / "package-skill.sh"
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        out = root / "kami.zip"
+        out.write_bytes(b"last-good")
+        env = dict(os.environ, KAMI_PACKAGE_MAX_BYTES="1")
+        result = subprocess.run(
+            ["bash", str(script), str(out)],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        leftovers = list(root.glob(".kami-package.*"))
+        check("failed package audit preserves the last good archive",
+              result.returncode == 1 and out.read_bytes() == b"last-good",
+              (result.stdout + result.stderr).strip())
+        check("failed package audit removes its candidate directory",
+              leftovers == [], str(leftovers))
+
+
 def test_plugin_metadata_generated() -> None:
     """Claude Code / Codex marketplaces and plugin mirrors must stay generated."""
     script = REPO_ROOT / "scripts" / "build_metadata.py"
@@ -347,6 +373,23 @@ def test_build_metadata_reads_tokens_from_root_argument() -> None:
               f"brandColor={plugin['interface']['brandColor']}")
 
 
+def test_catalog_lists_pptx_for_slides() -> None:
+    from build_metadata import build_catalog_feed
+
+    catalog = json.loads(build_catalog_feed(REPO_ROOT))
+    slide = next(
+        entry["item"]
+        for entry in catalog["itemListElement"]
+        if entry["item"].get("identifier") == "slides"
+    )
+    pptx_mime = (
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
+    check("catalog advertises the editable PPTX slide format",
+          pptx_mime in slide.get("encodingFormat", []),
+          str(slide.get("encodingFormat")))
+
+
 # --------------------------- shared registry ---------------------------
 
 def test_registry_consistency() -> None:
@@ -368,6 +411,25 @@ def test_registry_consistency() -> None:
           f"got {len(PPTX_TARGETS)}")
     check("PPTX_TARGETS in build.py matches shared.pptx_targets()",
           dict(PPTX_TARGETS) == pptx_targets())
+    registered_sources = {
+        **{f"html:{name}": TEMPLATES / spec.source
+           for name, spec in HTML_TEMPLATES.items()},
+        **{f"screen:{name}": TEMPLATES / source
+           for name, source in SCREEN_TEMPLATES.items()},
+        **{f"pptx:{name}": TEMPLATES / source
+           for name, source in pptx_targets().items()},
+        **{f"diagram:{name}": DIAGRAMS / source
+           for name, source in DIAGRAM_TEMPLATES.items()},
+        **{f"marp:{name}": TEMPLATES / source
+           for name, source in MARP_TEMPLATES.items()},
+    }
+    missing_sources = sorted(
+        f"{name} -> {path.relative_to(REPO_ROOT)}"
+        for name, path in registered_sources.items()
+        if not path.is_file()
+    )
+    check("every registered template source exists",
+          missing_sources == [], ", ".join(missing_sources))
     check("Marp registry maps authoring entries with matching CSS",
           marp_targets() == MARP_TEMPLATES
           and all(
@@ -377,6 +439,51 @@ def test_registry_consistency() -> None:
           ),
           str(MARP_TEMPLATES))
     check("PARCHMENT_RGB is canonical", PARCHMENT_RGB == (0xF5, 0xF4, 0xED))
+
+
+def test_ci_builds_registered_hard_page_and_pptx_targets() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "check.yml").read_text(
+        encoding="utf-8")
+    check("CI installs the editable PPTX runtime dependency",
+          "python-pptx" in workflow)
+    check("CI derives hard-page verification from the shared registry",
+          "from shared import HTML_TEMPLATES" in workflow
+          and "if spec.build_max_pages" in workflow)
+    check("CI verifies both editable PPTX targets",
+          "--verify slides\n" in workflow and "--verify slides-en" in workflow)
+
+
+def test_public_document_kinds_derive_new_registry_entries() -> None:
+    from shared import TemplateSpec, public_document_template_kinds
+
+    shared_mod.HTML_TEMPLATES["invoice"] = TemplateSpec("invoice.html", 1)
+    try:
+        kinds = public_document_template_kinds()
+    finally:
+        shared_mod.HTML_TEMPLATES.pop("invoice", None)
+    check("new registry kinds cannot disappear behind the public-kind allowlist",
+          "invoice" in kinds,
+          str(sorted(kinds)))
+
+
+def test_threshold_fallback_includes_resume_balance() -> None:
+    original = shared_mod.CHECKS_THRESHOLDS_FILE
+    with tempfile.TemporaryDirectory() as d:
+        shared_mod.CHECKS_THRESHOLDS_FILE = Path(d) / "missing-thresholds.json"
+        shared_mod.load_checks_thresholds.cache_clear()
+        try:
+            resume = shared_mod.load_checks_thresholds().get("resume_balance")
+        finally:
+            shared_mod.CHECKS_THRESHOLDS_FILE = original
+            shared_mod.load_checks_thresholds.cache_clear()
+    check("threshold fallback keeps the resume balance contract",
+          resume == {
+              "min_fill_pct": 0.83,
+              "max_fill_pct": 0.95,
+              "max_gap_pct": 0.12,
+              "dpi": 36,
+          },
+          repr(resume))
 
 
 def test_runner_auto_discovers_tests() -> None:
@@ -459,6 +566,17 @@ def test_site_facts_flags_bad_diagram_count() -> None:
     issues = site_fact_issues(files)
     check("public site facts flag stale diagram counts",
           any("index.html: missing diagram count 18" in issue for issue in issues),
+          f"issues: {issues}")
+
+
+def test_site_facts_cover_developer_install_docs() -> None:
+    files = site_fact_file_map()
+    command = "npx skills add tw93/kami/plugins/kami -a universal -g -y"
+    files["developers.md"] = files["developers.md"].replace(command, "npx skills add stale/path")
+    issues = site_fact_issues(files)
+    check("public site facts flag stale developer install docs",
+          any("developers.md: missing generic agent install command" in issue
+              for issue in issues),
           f"issues: {issues}")
 
 
@@ -610,6 +728,40 @@ def test_font_fallback_markers_recognize_pt_serif() -> None:
           f"markers: {RECOGNIZABLE_FALLBACK_FONT_MARKERS}")
 
 
+def test_font_probe_rejects_empty_and_truncated_bundles() -> None:
+    import optional_deps as optional_deps_mod
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        font_dir = root / "assets" / "fonts"
+        font_dir.mkdir(parents=True)
+        (font_dir / "Empty.ttf").write_bytes(b"")
+        (font_dir / "Truncated.otf").write_bytes(
+            b"OTTO\x00\x01\x00\x00\x00\x00\x00\x00"
+        )
+
+        original_root = optional_deps_mod.ROOT
+        original_which = optional_deps_mod.shutil.which
+        try:
+            optional_deps_mod.ROOT = root
+            optional_deps_mod.shutil.which = lambda _name: None
+            report = optional_deps_mod._probe_font(
+                "Broken Font",
+                ("Empty.ttf", "Truncated.otf"),
+                "negative-control font",
+            )
+        finally:
+            optional_deps_mod.ROOT = original_root
+            optional_deps_mod.shutil.which = original_which
+
+    check("font probe rejects empty and truncated bundled files",
+          report["status"] == "degraded"
+          and report["bundled"] == []
+          and "Empty.ttf" in report["detail"]
+          and "Truncated.otf" in report["detail"],
+          str(report))
+
+
 def test_brand_left_rule_uses_one_of_three_weights() -> None:
     """The brand left rule is one gesture at three weights, picked by role.
 
@@ -699,6 +851,18 @@ def test_font_family_key_collapses_weight_variants() -> None:
           f"offenders: {', '.join(offenders)}")
     check("font family key still separates real families",
           _font_family_key("Songti-SC") != _font_family_key("Hiragino-Mincho-ProN-Lig"))
+
+
+def test_inline_svg_text_uses_explicit_font_stacks() -> None:
+    """WeasyPrint must not hand inline SVG labels to an arbitrary system font."""
+    offenders = []
+    for folder in (REPO_ROOT / "assets" / "diagrams", REPO_ROOT / "assets" / "demos"):
+        for path in sorted(folder.glob("*.html")):
+            if re.search(r'<text\b[^>]*\bfont-family=["\']inherit["\']',
+                         path.read_text(encoding="utf-8"), re.IGNORECASE):
+                offenders.append(path.relative_to(REPO_ROOT).as_posix())
+    check("inline SVG text uses an explicit font stack",
+          offenders == [], str(offenders))
 
 
 def test_classify_cjk_font_separates_serif_from_the_rest() -> None:
@@ -947,6 +1111,31 @@ p { line-height: 1.8; }
         p.unlink(missing_ok=True)
 
 
+def test_scan_text_closes_multiline_css_false_greens() -> None:
+    direct = ".tag {\n  background:\n    rgba(255, 0, 0, 0.5);\n}"
+    direct_findings = scan_text(direct, Path("multiline.html"))
+    check("scan_text flags a multiline rgba background",
+          [(f.rule, f.line) for f in direct_findings] == [("rgba-background", 2)],
+          str([(f.rule, f.line) for f in direct_findings]))
+
+    variables = (
+        ":root { --safe: rgba(0, 0, 0, 0.1); "
+        "--unsafe: rgba(255, 0, 0, 0.5); }\n"
+        ".tag { background: var(--unsafe); }"
+    )
+    variable_findings = scan_text(variables, Path("variables.html"))
+    check("scan_text finds every rgba variable declared on one line",
+          [(f.rule, f.line) for f in variable_findings] == [("rgba-background", 2)],
+          str([(f.rule, f.line) for f in variable_findings]))
+
+
+def test_scan_file_flags_integer_line_height() -> None:
+    findings = scan_text("p { line-height: 2; }", Path("integer-line-height.html"))
+    check("scan_file flags integer line-height above the ceiling",
+          [f.rule for f in findings] == ["line-height-too-loose"],
+          str([(f.rule, f.excerpt) for f in findings]))
+
+
 def test_scan_file_cool_gray() -> None:
     """Cool-gray hex literals should be flagged."""
     fixture = """<!doctype html>
@@ -979,6 +1168,28 @@ def test_off_palette_flags_non_token_hex() -> None:
         check("_off_palette_findings flags non-token hex #ff00aa",
               "off-palette" in rules,
               f"rules found: {rules or '(none)'}")
+    finally:
+        p.unlink(missing_ok=True)
+
+
+def test_off_palette_flags_eight_digit_hex() -> None:
+    findings = _off_palette_findings(
+        Path("alpha-color.html"),
+        {"#1b365d"},
+        raw=".alert { color: #ff000080; }",
+    )
+    check("_off_palette_findings flags eight-digit hex colors",
+          len(findings) == 1
+          and findings[0].rule == "off-palette"
+          and "#ff000080" in findings[0].excerpt,
+          str([(f.rule, f.excerpt) for f in findings]))
+    p = write_temp_html(":root { --alert: #ff000080; }")
+    try:
+        root_findings = _root_token_findings(p, {"#1b365d"})
+        check("_root_token_findings flags eight-digit hex tokens",
+              len(root_findings) == 1
+              and "#ff000080" in root_findings[0].excerpt,
+              str([(f.rule, f.excerpt) for f in root_findings]))
     finally:
         p.unlink(missing_ok=True)
 
@@ -1097,6 +1308,36 @@ def test_check_update_script() -> None:
             ["bash", str(script)], capture_output=True, text=True, env=unwritable_cache_env)
         check("check-update is silent when the cache root is unusable",
               result.returncode == 0 and result.stdout == "" and result.stderr == "",
+              result.stdout + result.stderr)
+
+
+def test_check_update_defaults_to_latest_published_release() -> None:
+    script = REPO_ROOT / "scripts" / "check-update.sh"
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        bin_dir = root / "bin"
+        bin_dir.mkdir()
+        fake_curl = bin_dir / "curl"
+        fake_curl.write_text(
+            "#!/usr/bin/env bash\n"
+            "case \" $* \" in\n"
+            "  *\" https://github.com/tw93/Kami/releases/latest \"*)\n"
+            "    printf '%s' 'https://github.com/tw93/Kami/releases/tag/V9.9.9'\n"
+            "    ;;\n"
+            "esac\n",
+            encoding="utf-8",
+        )
+        fake_curl.chmod(0o755)
+        env = dict(
+            os.environ,
+            XDG_CACHE_HOME=str(root / "cache"),
+            PATH=f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+        )
+        env.pop("KAMI_UPDATE_URL", None)
+        result = subprocess.run(
+            ["bash", str(script)], capture_output=True, text=True, env=env)
+        check("check-update defaults to GitHub's latest published release tag",
+              result.returncode == 0 and "Kami 9.9.9 is available" in result.stdout,
               result.stdout + result.stderr)
 
 
@@ -1282,6 +1523,20 @@ def test_check_markdown_residue_skips_html_code_blocks() -> None:
         '<body><p>Visible **raw despite CSS uncertainty**</p></body></html>',
         suffix=".html",
     )
+    descendant_css = write_temp_html(
+        '<style>.wrap img { display: none }</style>'
+        '<div class="wrap"><p>**VISIBLE-DESCENDANT**</p></div>',
+        suffix=".html",
+    )
+    overridden_css = write_temp_html(
+        '<style>.x { display: none } .x { display: block }</style>'
+        '<p class="x">**VISIBLE-OVERRIDE**</p>',
+        suffix=".html",
+    )
+    aria_hidden = write_temp_html(
+        '<p aria-hidden="true">**VISUALLY-PRESENT**</p>',
+        suffix=".html",
+    )
     try:
         rc = silently(check_markdown_residue, [str(dirty)])
         check("check_markdown_residue fails visible raw markdown", rc == 1, f"rc={rc}")
@@ -1290,10 +1545,42 @@ def test_check_markdown_residue_skips_html_code_blocks() -> None:
         rc = silently(check_markdown_residue, [str(ambiguous_css)])
         check("markdown residue includes text under ambiguous CSS",
               rc == 1, f"rc={rc}")
+        residue_results = [
+            silently(check_markdown_residue, [str(path)])
+            for path in (descendant_css, overridden_css, aria_hidden)
+        ]
+        check("markdown residue never hides visually possible stylesheet or aria text",
+              residue_results == [1, 1, 1], str(residue_results))
     finally:
-        dirty.unlink(missing_ok=True)
-        clean_code.unlink(missing_ok=True)
-        ambiguous_css.unlink(missing_ok=True)
+        for path in (
+            dirty, clean_code, ambiguous_css, descendant_css,
+            overridden_css, aria_hidden,
+        ):
+            path.unlink(missing_ok=True)
+
+
+def test_pdf_markdown_residue_skips_monospace_code() -> None:
+    """Semantic code blocks remain exempt after HTML is flattened into PDF text."""
+    try:
+        from render import render_pdf
+        import weasyprint  # noqa: F401
+        import pypdf  # noqa: F401
+    except ImportError:
+        skip("PDF code residue exemption", "render dependencies unavailable", ci_required=True)
+        return
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        html = root / "code.html"
+        pdf = root / "code.pdf"
+        html.write_text(
+            '<style>code { font-family: monospace }</style>'
+            '<p>Visible prose is clean.</p><pre><code>const msg = `hello`;</code></pre>',
+            encoding="utf-8",
+        )
+        render_pdf(html, pdf)
+        rc = silently(check_markdown_residue, [str(pdf)])
+        check("PDF markdown residue skips monospace code", rc == 0, f"rc={rc}")
 
 
 # --------------------------- cross-template consistency ---------------------------
@@ -1495,6 +1782,31 @@ def test_resume_balance_issues() -> None:
           f"issues={issues}")
 
 
+def test_verify_target_requires_exactly_two_resume_pages() -> None:
+    original_render = verify_mod.render_pdf
+    original_fonts = verify_mod._pdf_font_names
+    try:
+        verify_mod._pdf_font_names = lambda _: {"ABCDEF+TsangerJinKai02-W04"}
+        results = {}
+        for page_count in (1, 2, 3):
+            verify_mod.render_pdf = lambda _src, _out, n=page_count: n
+            results[page_count] = verify_mod.verify_target(
+                "resume", "resume.html", 2, TEMPLATES
+            )
+    finally:
+        verify_mod.render_pdf = original_render
+        verify_mod._pdf_font_names = original_fonts
+
+    check("verify_target accepts a two-page resume",
+          results[2] == [], repr(results[2]))
+    check("verify_target rejects one- and three-page resumes as exact-count failures",
+          all(
+              any("expected 2" in issue for issue in results[count])
+              for count in (1, 3)
+          ),
+          repr(results))
+
+
 # --------------------------- runner ---------------------------
 
 def test_highlight_with_language() -> None:
@@ -1522,6 +1834,23 @@ def test_highlight_without_language() -> None:
     check("highlight does not modify plain code block",
           out == html,
           f"out differs: {out[:200]}")
+
+
+def test_highlight_accepts_valid_class_attribute_variants() -> None:
+    if importlib.util.find_spec("pygments") is None:
+        skip("highlight class attribute variants", "Pygments unavailable", ci_required=True)
+        return
+
+    cases = [
+        "<pre><code class='language-python'>print(1)</code></pre>",
+        '<pre><code id="sample" class="language-python">print(1)</code></pre>',
+        '<pre><code class="language-python extra">print(1)</code></pre>',
+        '<PRE><CODE CLASS="extra language-python">print(1)</CODE></PRE>',
+    ]
+    outputs = [highlight_code_blocks(html) for html in cases]
+    check("highlight accepts quotes, attribute order, multiple classes, and tag case",
+          all("<span" in output and "style=" in output for output in outputs),
+          str(outputs))
 
 
 def test_highlight_without_pygments_dependency() -> None:
@@ -1597,6 +1926,121 @@ def test_render_pdf_preserves_last_good_output_on_post_render_failure() -> None:
         render_mod.set_pdf_metadata = original_metadata
 
 
+def test_pdf_metadata_preserves_document_navigation_and_language() -> None:
+    try:
+        from pypdf import PdfReader, PdfWriter
+        from pypdf.generic import NameObject, RectangleObject, TextStringObject
+        from render import set_pdf_metadata
+    except ImportError as exc:
+        skip("PDF metadata structure preservation", str(exc), ci_required=True)
+        return
+
+    with tempfile.TemporaryDirectory() as d:
+        pdf = Path(d) / "structured.pdf"
+        writer = PdfWriter()
+        writer.add_blank_page(width=612, height=792)
+        writer.add_outline_item("Chapter", 0)
+        writer.add_named_destination("chapter", 0)
+        writer.add_uri(
+            0,
+            "https://example.com",
+            RectangleObject([0, 0, 20, 20]),
+        )
+        writer.root_object.update({
+            NameObject("/Lang"): TextStringObject("en-US"),
+        })
+        writer.add_metadata({"/Author": "{{AUTHOR}}", "/Title": "Structured"})
+        writer.write(str(pdf))
+
+        set_pdf_metadata(pdf, author="Ada Lovelace")
+        reader = PdfReader(str(pdf))
+        root = reader.trailer["/Root"]
+        annotation_count = len(reader.pages[0].get("/Annots", []))
+        metadata = dict(reader.metadata or {})
+        structure = {
+            "pages": len(reader.pages),
+            "outline": len(reader.outline),
+            "names": sorted(reader.named_destinations),
+            "lang": str(root.get("/Lang")),
+            "annotations": annotation_count,
+        }
+
+    check("PDF metadata update preserves catalog navigation and annotations",
+          structure == {
+              "pages": 1,
+              "outline": 1,
+              "names": ["chapter"],
+              "lang": "en-US",
+              "annotations": 1,
+          },
+          str(structure))
+    check("PDF metadata update changes only placeholder author and Kami stamps",
+          metadata.get("/Author") == "Ada Lovelace"
+          and metadata.get("/Title") == "Structured"
+          and metadata.get("/Producer") == "Kami"
+          and metadata.get("/Creator") == "Kami",
+          str(metadata))
+
+
+def test_build_slides_requires_a_fresh_valid_pptx() -> None:
+    import render as render_mod
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        templates = root / "templates"
+        examples = root / "examples"
+        templates.mkdir()
+        examples.mkdir()
+        (templates / "slides.py").write_text("# fixture", encoding="utf-8")
+        out = examples / "slides.pptx"
+        out.write_bytes(b"last-good")
+
+        original_templates = render_mod.TEMPLATES
+        original_examples = render_mod.EXAMPLES
+        original_targets = render_mod.pptx_targets
+        original_run = render_mod.subprocess.run
+        mode = "missing"
+
+        def fake_run(command, **_kwargs):
+            candidate = Path(command[-1])
+            if mode == "invalid":
+                candidate.write_bytes(b"not-a-pptx")
+            elif mode == "valid":
+                with zipfile.ZipFile(candidate, "w") as archive:
+                    for entry in render_mod._PPTX_REQUIRED_ENTRIES:
+                        archive.writestr(entry, b"fixture")
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+        try:
+            render_mod.TEMPLATES = templates
+            render_mod.EXAMPLES = examples
+            render_mod.pptx_targets = lambda: {"slides": "slides.py"}
+            render_mod.subprocess.run = fake_run
+
+            missing_ok = silently(render_mod.build_slides, "slides")
+            missing_preserved = out.read_bytes() == b"last-good"
+            mode = "invalid"
+            invalid_ok = silently(render_mod.build_slides, "slides")
+            invalid_preserved = out.read_bytes() == b"last-good"
+            mode = "valid"
+            valid_ok = silently(render_mod.build_slides, "slides")
+            valid_issue = render_mod._pptx_issue(out)
+        finally:
+            render_mod.TEMPLATES = original_templates
+            render_mod.EXAMPLES = original_examples
+            render_mod.pptx_targets = original_targets
+            render_mod.subprocess.run = original_run
+
+        leftovers = list(examples.glob(".slides.pptx-*"))
+
+    check("PPTX build rejects missing and invalid candidates without replacement",
+          not missing_ok and missing_preserved and not invalid_ok and invalid_preserved,
+          f"missing={missing_ok}/{missing_preserved} invalid={invalid_ok}/{invalid_preserved}")
+    check("PPTX build atomically accepts a fresh valid package",
+          valid_ok and valid_issue is None and leftovers == [],
+          f"valid={valid_ok} issue={valid_issue} leftovers={leftovers}")
+
+
 def test_release_gate_rejects_identity_mismatches() -> None:
     from release_gate import release_identity_issues
 
@@ -1661,6 +2105,30 @@ def test_release_gate_compares_zip_payloads_not_container_bytes() -> None:
               len(duplicate_issues) == 1
               and "duplicate ZIP entry: kami/VERSION" in duplicate_issues[0],
               str(duplicate_issues))
+
+
+def test_release_workflow_reads_back_required_reactions() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
+        encoding="utf-8")
+    expected = ("+1", "eyes", "heart", "hooray", "laugh", "rocket")
+    check("release workflow reads reactions back after posting",
+          "gh api --paginate" in workflow
+          and "release reactions missing" in workflow
+          and all(workflow.count(reaction) >= 2 for reaction in expected),
+          "release workflow lacks a final reaction-set assertion")
+
+
+def test_release_note_help_matches_placeholder_flow() -> None:
+    draft = (REPO_ROOT / "scripts" / "draft-release-notes.py").read_text(
+        encoding="utf-8")
+    release_doc = (REPO_ROOT / "docs" / "release.md").read_text(encoding="utf-8")
+    check("release-note help edits the workflow-created placeholder",
+          "gh release edit --notes-file" in draft
+          and "gh release create --notes-file" not in draft
+          and '"--match", "V[0-9]*.[0-9]*.[0-9]*"' in draft
+          and "V<prev>..HEAD" in release_doc
+          and "let CI create the placeholder" in release_doc,
+          "draft-release-notes.py and docs/release.md disagree")
 
 
 def test_marp_themes_token_synced() -> None:
@@ -1895,6 +2363,47 @@ def test_content_schemas_parse_and_are_objects() -> None:
         except json.JSONDecodeError:
             bad.append(name)
     check("content schemas parse as object contracts", not bad, f"bad: {bad}")
+
+
+def test_changelog_contract_requires_four_to_eight_changes() -> None:
+    from content import validate_content_file
+
+    def validate(version: dict) -> list[str]:
+        _, issues = validate_content_file({
+            "type": "changelog",
+            "lang": "en",
+            "content": {"product": "Kami", "versions": [version]},
+        })
+        return issues
+
+    base = {"version": "V1.2.3", "date": "2026-08-23"}
+    valid = validate({
+        **base,
+        "breaking": [{"change": "Changed command", "migration": "Use new command"}],
+        "features": ["Added export", "Added preview"],
+        "fixes": ["Fixed wrapping"],
+    })
+    missing = validate(base)
+    too_few = validate({**base, "fixes": ["Fixed first", "Fixed second", "Fixed third"]})
+    too_many = validate({
+        **base,
+        "features": [f"Added feature {index}" for index in range(8)],
+        "fixes": ["Fixed overflow"],
+    })
+    empty_class = validate({**base, "features": []})
+
+    check("changelog accepts four changes split across supported classes",
+          valid == [], repr(valid))
+    check("changelog requires at least one change class",
+          any("requires at least one" in issue for issue in missing),
+          repr(missing))
+    check("changelog enforces the combined four-to-eight entry envelope",
+          any("got 3" in issue for issue in too_few)
+          and any("got 9" in issue for issue in too_many),
+          f"few={too_few} many={too_many}")
+    check("changelog rejects an explicitly empty change class",
+          any("too few items" in issue for issue in empty_class),
+          repr(empty_class))
 
 
 def test_validate_node_flags_structural_defects() -> None:
@@ -2238,6 +2747,14 @@ def test_content_ir_validates_optional_artifact_brief() -> None:
     )
     korean_pptx_fallback_issues = _brief_contract_issues(
         {
+            "template": "slides-en", "formats": ["pptx"],
+            "page_target": 12,
+        },
+        "slides",
+        "ko",
+    )
+    korean_mixed_fallback_issues = _brief_contract_issues(
+        {
             "template": "slides-en", "formats": ["html", "pdf", "pptx"],
             "page_target": 12,
         },
@@ -2263,8 +2780,10 @@ def test_content_ir_validates_optional_artifact_brief() -> None:
           korean_pptx_fallback_issues == [], str(korean_pptx_fallback_issues))
     check("brief contract limits the Korean slides-en fallback to editable PPTX",
           any("does not match language 'ko'" in issue
-              for issue in korean_pdf_wrong_variant_issues),
-          str(korean_pdf_wrong_variant_issues))
+              for issue in korean_pdf_wrong_variant_issues)
+          and any("does not match language 'ko'" in issue
+                  for issue in korean_mixed_fallback_issues),
+          f"pdf={korean_pdf_wrong_variant_issues} mixed={korean_mixed_fallback_issues}")
 
     marp_brief = dict(
         brief,
@@ -2993,9 +3512,11 @@ def test_mcp_server_stdio_protocol() -> None:
     """The server must speak newline-delimited JSON-RPC with nothing else on stdout."""
     script = REPO_ROOT / "scripts" / "mcp_server.py"
     msgs = [
+        {"jsonrpc": "2.0", "method": "initialize", "params": {}},
         {"jsonrpc": "2.0", "id": 1, "method": "initialize",
          "params": {"protocolVersion": "2025-03-26"}},
         {"jsonrpc": "2.0", "method": "notifications/initialized"},
+        {"jsonrpc": "2.0", "id": None, "method": "ping"},
         {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
         {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
          "params": {"name": "kami_templates", "arguments": {}}},
@@ -3041,7 +3562,11 @@ def test_mcp_server_stdio_protocol() -> None:
           doctor_body[:300])
     check("mcp unknown tool returns a JSON-RPC error",
           "error" in replies.get(5, {}), json.dumps(replies.get(5, {}))[:200])
-    check("mcp notification produced no reply", len(replies) == 5, str(sorted(replies)))
+    check("mcp explicit null id remains a request",
+          replies.get(None, {}).get("result") == {}, str(replies.get(None)))
+    check("mcp notifications produced no reply", len(replies) == 6, str(sorted(
+        ("null" if key is None else str(key)) for key in replies
+    )))
 
 
 def test_mcp_check_returns_stable_findings_and_coverage() -> None:
@@ -3306,6 +3831,33 @@ def test_visual_rejects_empty_pdf_and_bad_dpi() -> None:
         else:
             huge_rejected = False
         check("visual rejects an oversized raster page before rendering", huge_rejected)
+
+
+def test_document_checks_reject_empty_pdf() -> None:
+    """A readable PDF with zero pages is not a successfully checked artifact."""
+    try:
+        from pypdf import PdfWriter
+        from checks import check_density, check_orphans
+        from mcp_server import tool_check
+    except ImportError:
+        skip("empty-PDF document checks", "render dependencies unavailable", ci_required=True)
+        return
+
+    with tempfile.TemporaryDirectory() as d:
+        pdf = Path(d) / "empty.pdf"
+        PdfWriter().write(str(pdf))
+        results = [
+            silently(check_markdown_residue, [str(pdf)]),
+            silently(check_orphans, [str(pdf)]),
+            silently(check_density, [str(pdf)]),
+        ]
+        mcp_result = tool_check({"path": str(pdf)})
+        check("PDF checks reject zero-page artifacts",
+              results == [2, 2, 2], str(results))
+        check("MCP check rejects zero-page artifacts",
+              not mcp_result["ok"]
+              and all(rule["status"] == "degraded" for rule in mcp_result["coverage"]),
+              str(mcp_result))
 
 
 def _test_functions():

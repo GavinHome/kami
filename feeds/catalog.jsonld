@@ -129,7 +129,8 @@
         ],
         "encodingFormat": [
           "text/html",
-          "application/pdf"
+          "application/pdf",
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         ]
       }
     },

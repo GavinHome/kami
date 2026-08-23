@@ -380,8 +380,7 @@ def _brief_contract_issues(
         korean_pptx_fallback = (
             template == "slides-en"
             and requested_family == "ko"
-            and isinstance(formats, list)
-            and "pptx" in formats
+            and formats == ["pptx"]
         )
         korean_marp_fallback = (
             template == "slides-marp"
@@ -423,6 +422,38 @@ def _brief_contract_issues(
     return issues
 
 
+def _changelog_contract_issues(content: dict) -> list[str]:
+    """Enforce the per-version change envelope across the three arrays.
+
+    The supported JSON Schema subset cannot express a sum across sibling
+    arrays, so keep the executable 4-8 item rule next to schema validation.
+    """
+    issues: list[str] = []
+    versions = content.get("versions")
+    if not isinstance(versions, list):
+        return issues
+    fields = ("breaking", "features", "fixes")
+    for index, version in enumerate(versions):
+        if not isinstance(version, dict):
+            continue
+        if any(field in version and not isinstance(version[field], list) for field in fields):
+            continue
+        present = [field for field in fields if field in version]
+        if not present:
+            issues.append(
+                f"content.versions[{index}]: requires at least one of "
+                "'breaking', 'features', or 'fixes'"
+            )
+            continue
+        total = sum(len(version[field]) for field in present)
+        if total < 4 or total > 8:
+            issues.append(
+                f"content.versions[{index}]: expected 4-8 total change entries "
+                f"across breaking/features/fixes, got {total}"
+            )
+    return issues
+
+
 def validate_content_file(data) -> tuple[str | None, list[str]]:
     """Validate a parsed content IR envelope. Returns (doc_type, issues)."""
     if not isinstance(data, dict):
@@ -451,6 +482,8 @@ def validate_content_file(data) -> tuple[str | None, list[str]]:
         if isinstance(brief, dict):
             issues.extend(_brief_contract_issues(brief, doc_type, lang))
     issues.extend(validate_node(body, load_schema(doc_type)))
+    if doc_type == "changelog":
+        issues.extend(_changelog_contract_issues(body))
     return doc_type, issues
 
 
