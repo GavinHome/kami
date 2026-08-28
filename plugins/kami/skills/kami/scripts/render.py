@@ -18,7 +18,7 @@ import zipfile
 from pathlib import Path
 
 from highlight import highlight_code_blocks
-from math_render import render_latex_in_html
+from math_render import MathRenderError, render_latex_in_html
 from optional_deps import (
     MissingDepError,
     require_pypdf_reader,
@@ -107,8 +107,9 @@ def render_pdf(src: Path, out: Path) -> int:
 
     The full pipeline every caller must agree on: strict TeX-to-SVG math rendering,
     build-time code highlighting, WeasyPrint with base_url at the source directory, Kami PDF metadata, page
-    count via pypdf. Raises MissingDepError when weasyprint/pypdf are absent;
-    callers decide how to report it.
+    count via pypdf. Raises MissingDepError when weasyprint/pypdf are absent
+    and MathRenderError when formula source or the locked renderer is invalid;
+    callers decide how to report either failure.
     """
     HTML = require_weasyprint_html()
     PdfReader = require_pypdf_reader()

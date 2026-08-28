@@ -47,7 +47,7 @@ Design, writing, production, and diagram guidance live in `CHEATSHEET.md` and `r
 
 Code blocks with `class="language-*"` are highlighted only when optional `Pygments` is installed in the build environment. Without it, PDFs still render and code blocks stay monochrome.
 
-**Mathematics is strict LaTeX, never pseudo-math.** When a document contains mathematics, author formulas only as standard LaTeX delimiters: inline `\( ... \)` and display `\[ ... \]`. Do not replace formulas with Unicode approximations, ASCII fractions, screenshots, or raw TeX printed on the page. Before shipping HTML/PDF, run `bash scripts/ensure_mathjax.sh`, then `python3 scripts/math_render.py --in-place filled.html`; this converts every formula into MathJax SVG. `render_pdf` also performs this conversion in memory as a hard fallback and fails if MathJax or the TeX is invalid. Finish with `python3 scripts/math_render.py --check filled.html`; a completed HTML must contain no raw TeX delimiters or unrendered LaTeX placeholders.
+**Mathematics is strict LaTeX, never pseudo-math.** When a document contains mathematics, author formulas only as standard LaTeX delimiters in rendered body text: inline `\( ... \)` and display `\[ ... \]`. Delimiters inside title metadata, form options, literal/code, script, style, SVG, template, and MathML regions are treated as text. Do not replace formulas with Unicode approximations, ASCII fractions, screenshots, or raw TeX printed on the page. The renderer requires Node.js 20 or Node.js 22 and newer. Before shipping HTML/PDF, run `bash scripts/ensure_mathjax.sh`, then `python3 scripts/math_render.py --in-place filled.html`; this converts every formula into MathJax SVG. `render_pdf` also performs this conversion in memory as a hard fallback and fails if MathJax or the TeX is invalid. Finish with `python3 scripts/math_render.py --check filled.html`; a completed HTML must contain no raw TeX delimiters in rendered body text.
 
 ## Step 1.5 · Intent extraction (silent)
 
@@ -396,7 +396,6 @@ python3 scripts/build.py --check-markdown path/to/filled.pdf
 bash scripts/ensure_mathjax.sh                            # strict TeX renderer dependency
 python3 scripts/math_render.py --in-place filled.html     # TeX -> MathJax SVG in delivered HTML
 python3 scripts/math_render.py --check filled.html        # fail on raw/unrendered TeX
-python3 scripts/add_outline.py filled.html out.pdf        # preserve renderer outline or inject chapter fallback
 python3 scripts/build.py --check-content content.json path/to/filled.html
 python3 scripts/build.py --check-visual path/to/filled.pdf
 python3 scripts/build.py --check-fonts path/to/filled.pdf   # which family actually drew the CJK text
@@ -409,8 +408,6 @@ python3 scripts/build.py --doctor         # installed render/check/font capabili
 python3 scripts/build.py --check            # lint + token/theme + public-site fact checks
 python3 scripts/build_metadata.py --check   # Claude/Codex plugin mirror + marketplace drift check
 ```
-
-> **Outline (PDF bookmarks)**: For every multi-page document (long-doc / portfolio / equity-report / changelog), run `python3 scripts/add_outline.py filled.html out.pdf` after rendering. Newer WeasyPrint versions already emit an H1/H2/H3 sidebar outline; the script preserves it. Older renderers emit none, and the script injects a chapter-level fallback from anchors. Never guess page numbers manually. Single-page templates (resume / one-pager / letter) skip the outline.
 
 > **Strict LaTeX mathematics**: Use only `\( inline \)` / `\[ display \]` as formula source. The delivered HTML/PDF must contain MathJax SVG, not Unicode pseudo-formulas, raw TeX, or formula screenshots. Run `ensure_mathjax.sh`, `math_render.py --in-place`, and `math_render.py --check` before render/hand-off.
 
@@ -436,8 +433,7 @@ A task is done when the user receives, in the closing message:
 2. Which checks ran and their results, including the page-count contract.
 3. Every remaining `[DATA NEEDED]` gap, listed explicitly. Never declare done with an unreported gap.
 4. The visual verdict, stated honestly by surface: for PDFs the `--check-visual` pass status (which includes the font gate); for screen surfaces the 375px/1280px screenshot result; when rendering could not be inspected, say "build verified, visuals unconfirmed", not "done".
-5. For multi-page PDFs, the outline result: renderer outline preserved or fallback outline injected by `scripts/add_outline.py`.
-6. For documents containing mathematics, the strict LaTeX result: MathJax SVG rendering and `scripts/math_render.py --check` both passed.
+5. For documents containing mathematics, the strict LaTeX result: MathJax SVG rendering and `scripts/math_render.py --check` both passed.
 
 ## Fonts
 

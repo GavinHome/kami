@@ -178,20 +178,20 @@ different element for chapter titles, add `.running-title` to that element.
 
 ### Strict LaTeX mathematics
 
-WeasyPrint has no JavaScript runtime, so MathJax/KaTeX script tags do **not** render mathematics. Kami therefore uses a local MathJax SVG path. Author source formulas strictly as inline `\( ... \)` or display `\[ ... \]`; do not ship Unicode approximations, raw TeX, or screenshot formulas.
+WeasyPrint has no JavaScript runtime, so MathJax/KaTeX script tags do **not** render mathematics. Kami therefore uses a local MathJax SVG path backed by Node.js 20 or Node.js 22 and newer. Author source formulas strictly as inline `\( ... \)` or display `\[ ... \]` in rendered body text. Delimiters inside title metadata, form options, literal/code/script/style/SVG/template/MathML regions are ignored. Do not ship Unicode approximations, raw TeX, or screenshot formulas.
 
 ```bash
 # One-time dependency check/install
 bash scripts/ensure_mathjax.sh
 
-# Convert every LaTeX placeholder in delivered HTML to self-contained MathJax SVG
+# Convert every standard LaTeX delimiter pair in delivered HTML to MathJax SVG
 python3 scripts/math_render.py --in-place filled.html
 
-# A completed HTML must have no raw TeX delimiters or placeholders
+# A completed HTML must have no raw TeX delimiters
 python3 scripts/math_render.py --check filled.html
 ```
 
-`render_pdf` performs the same conversion in memory as a hard fallback and fails on invalid TeX or missing MathJax. The in-place command remains required when HTML itself is delivered, reviewed, or reused. MathJax SVG is vector output and prints sharply in WeasyPrint PDFs.
+`render_pdf` performs the same conversion in memory as a hard fallback and fails on unmatched delimiters, invalid TeX, author-controlled color/HTML/link commands, unsafe MathJax markup, or a missing locked runtime. Formulas inherit the document's text color. The in-place command writes atomically and remains required when HTML itself is delivered, reviewed, or reused. MathJax SVG is vector output and prints sharply in WeasyPrint PDFs.
 
 ### PDF metadata
 

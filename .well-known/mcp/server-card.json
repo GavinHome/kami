@@ -39,7 +39,7 @@
     },
     {
       "name": "kami_check",
-      "description": "Run Kami's deterministic checks for a file. HTML: placeholders + markdown residue (+ content coverage when a content IR JSON is given). PDF: markdown residue + orphans + density. JSON: content IR schema validation. Returns the legacy report plus stable rule IDs, findings, coverage status, and explicit degraded checks."
+      "description": "Run Kami's deterministic checks for a file. HTML: placeholders + strict mathematics + markdown residue (+ content coverage when a content IR JSON is given). PDF: markdown residue + orphans + density. JSON: content IR schema validation. Returns the legacy report plus stable rule IDs, findings, coverage status, and explicit degraded checks."
     },
     {
       "name": "kami_screenshot",
