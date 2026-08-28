@@ -176,6 +176,23 @@ different element for chapter titles, add `.running-title` to that element.
 | `target-counter(attr(href), page)` for rendered TOC page numbers | | |
 | `::before` / `::after` | | |
 
+### Strict LaTeX mathematics
+
+WeasyPrint has no JavaScript runtime, so MathJax/KaTeX script tags do **not** render mathematics. Kami therefore uses a local MathJax SVG path. Author source formulas strictly as inline `\( ... \)` or display `\[ ... \]`; do not ship Unicode approximations, raw TeX, or screenshot formulas.
+
+```bash
+# One-time dependency check/install
+bash scripts/ensure_mathjax.sh
+
+# Convert every LaTeX placeholder in delivered HTML to self-contained MathJax SVG
+python3 scripts/math_render.py --in-place filled.html
+
+# A completed HTML must have no raw TeX delimiters or placeholders
+python3 scripts/math_render.py --check filled.html
+```
+
+`render_pdf` performs the same conversion in memory as a hard fallback and fails on invalid TeX or missing MathJax. The in-place command remains required when HTML itself is delivered, reviewed, or reused. MathJax SVG is vector output and prints sharply in WeasyPrint PDFs.
+
 ### PDF metadata
 
 WeasyPrint reads standard meta tags in `<head>` and writes them into the PDF (Title / Author / Subject / Keywords). All templates have pre-built placeholders:

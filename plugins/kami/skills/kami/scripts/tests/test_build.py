@@ -215,6 +215,10 @@ PACKAGE_REQUIRED_ENTRIES = {
     "references/design.md",
     "scripts/build.py",
     "scripts/ensure-fonts.sh",
+    "scripts/ensure_mathjax.sh",
+    "scripts/math_render.py",
+    "scripts/mathjax_svg.js",
+    "scripts/add_outline.py",
     "scripts/site_facts.py",
 }
 
@@ -1826,6 +1830,23 @@ def test_highlight_with_language() -> None:
           f"out: {out[:200]}")
     check("highlight preserves pre/code wrapper",
           "<pre" in out and "</code>" in out)
+
+
+def test_math_render_strict_placeholder_check() -> None:
+    from math_render import check_latex_html, render_latex_in_html
+
+    pending = '<span class="latex-inline" data-latex="x^2"></span>'
+    rendered = '<span class="latex-inline-svg"><svg></svg></span>'
+    check("math check rejects unrendered LaTeX placeholders",
+          bool(check_latex_html(pending)),
+          str(check_latex_html(pending)))
+    check("math check accepts rendered MathJax SVG",
+          check_latex_html(rendered) == [],
+          str(check_latex_html(rendered)))
+    plain = "<p>no mathematics here</p>"
+    check("math renderer leaves non-math HTML unchanged",
+          render_latex_in_html(plain) == plain,
+          render_latex_in_html(plain))
 
 
 def test_highlight_without_language() -> None:
