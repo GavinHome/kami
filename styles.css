@@ -19,6 +19,7 @@
     --parchment:    #f5f4ed;
     --ivory:        #faf9f5;
     --warm-sand:    #e8e6dc;
+    --inline-code-bg: #f0eee6;
     --dark-surface: #30302e;
     --deep-dark:    #141413;
 
@@ -371,9 +372,9 @@
   .rules code {
     font-family: var(--mono);
     font-size: 12px;
-    color: var(--brand);
-    background: #EEF2F7;
-    padding: 1px 5px;
+    color: var(--dark-warm);
+    background: var(--inline-code-bg);
+    padding: 0 3px;
     border-radius: 2px;
   }
 
@@ -478,7 +479,7 @@
   /* ---------- Type ---------- */
   .type-grid {
     display: grid;
-    grid-template-columns: 180px 1fr 160px;
+    grid-template-columns: 180px minmax(0, 1fr) 160px;
     column-gap: 40px;
     row-gap: 0;
     border-top: 1px solid var(--border-soft);
@@ -847,9 +848,9 @@
   .decision td.how code {
     font-family: var(--mono);
     font-size: 12px;
-    background: #EEF2F7;
-    color: var(--brand);
-    padding: 1px 5px;
+    color: var(--dark-warm);
+    background: var(--inline-code-bg);
+    padding: 0 3px;
     border-radius: 2px;
   }
 
@@ -972,10 +973,9 @@
     font-family: var(--mono);
     font-size: 13.5px;
     color: var(--dark-warm);
-    background: var(--ivory);
-    border: 1px solid var(--border-soft);
-    border-radius: 4px;
-    padding: 1px 5px;
+    background: var(--inline-code-bg);
+    border-radius: 2px;
+    padding: 0 3px;
   }
   .prose .note {
     font-size: 14px;
@@ -1107,6 +1107,15 @@
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
+  .footer-links a {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .footer-links a:not(:last-child)::after {
+    content: " ·";
+    color: var(--stone);
+    margin-right: 8px;
+  }
   .footer .colophon b { color: var(--dark-warm); font-weight: 500; }
 
   /* Anti-patterns ledger */
@@ -1156,9 +1165,9 @@
   .anti code {
     font-family: var(--mono);
     font-size: 12px;
-    color: var(--brand);
-    background: #EEF2F7;
-    padding: 1px 4px;
+    color: var(--dark-warm);
+    background: var(--inline-code-bg);
+    padding: 0 3px;
     border-radius: 2px;
   }
 

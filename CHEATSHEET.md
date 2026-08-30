@@ -26,6 +26,7 @@ Full pass in SKILL.md Step 2.1. The one contract worth repeating: a number you c
 | ------------ | ------------- | --------------------------------------------------- |
 | Parchment    | `#f5f4ed`     | Page background                                     |
 | Ivory        | `#faf9f5`     | Quiet filled container                              |
+| Inline Code  | `#f0eee6`     | Screen annotation, slightly darker than paper       |
 | Warm Sand    | `#e8e6dc`     | Button / interactive surface                        |
 | Dark Surface | `#30302e`     | Dark container                                      |
 | Deep Dark    | `#141413`     | Dark page background                                |

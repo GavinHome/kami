@@ -41,6 +41,7 @@ This system is a fusion of Anthropic's visual language and real Chinese / Englis
 ```css
 --parchment:    #f5f4ed;   /* Page background - warm cream, the emotional foundation */
 --ivory:        #faf9f5;   /* Quiet filled container - brighter than parchment */
+--inline-code-bg: #f0eee6; /* Screen inline annotation - one warm-gray step darker than parchment */
 --warm-sand:    #e8e6dc;   /* Button default / interactive surface */
 --dark-surface: #30302e;   /* Dark-theme container - warm charcoal */
 --deep-dark:    #141413;   /* Dark-theme page background - not pure black, slight olive undertone */
@@ -81,7 +82,7 @@ The "no second chromatic color" rule has exactly one approved exception: the bre
 
 **Why**: WeasyPrint's alpha compositing for padding vs glyph areas produces a visible double rectangle on zoom. See `production.md` Part 4 Pitfall #1.
 
-Ink Blue `#1B365D` over parchment `#f5f4ed` resolves to two registered tokens, and those are the only two the document templates and public design-system site use:
+Ink Blue `#1B365D` over parchment `#f5f4ed` resolves to two registered chromatic tints:
 
 | Token | Hex | Use |
 |---|---|---|
@@ -89,6 +90,11 @@ Ink Blue `#1B365D` over parchment `#f5f4ed` resolves to two registered tokens, a
 | `--brand-tint` | `#EEF2F7` | the lightest fill, when a tag must recede |
 
 Use the token, never a hand-mixed `rgba()`. A tint outside these two is a new token: add it to `tokens.json` first, or `scripts/tokens.py` will fail the sync guard across the templates that define it.
+
+`--inline-code-bg` is a screen-only warm-neutral surface, not a third accent
+tint. Use it for small literals embedded in explanatory web copy, where blue
+would imply focus or a clickable state. Print templates keep their existing
+ivory inline-code treatment.
 
 ---
 
@@ -1221,7 +1227,7 @@ Content rules in `references/writing.md` «Pricing rules»: benefits lead, the p
 
 - `pre.code`: ivory background, 1px border, 6px radius, 18px 22px padding
 - Font: `--mono` 13.5px, tabular-nums, line-height 1.55; reduce to 11.5px at the phone breakpoint (480px) so wide lines stay legible without horizontal scroll. `code { min-width: max-content }` lets long lines scroll instead of wrapping.
-- Inline `code` is a distinct style, not the block palette: brand-tint background, brand text, 1px hairline, `0.9em`.
+- Inline `code` is an annotation, not a focal tag: `--inline-code-bg` background, dark-warm text, no border, 2px radius, minimal horizontal padding, `0.9em`.
 
 Screen code blocks may use a dark surface (`--shot-bg: #141318`, the same frame as the gallery) instead of ivory. Highlight at build time with zero runtime JS: a script bakes static `<span class>` markup (e.g. Pygments) and is idempotent, so re-running it after any doc edit refreshes the output; merge adjacent same-class spans so the markup stays small. Plain code stays the source of truth; the spans are generated, never hand-authored. Keep the token palette restrained on the dark surface:
 
@@ -1288,7 +1294,7 @@ The `.features` list above is the shipped default. A feature *row* (a visual on 
 - Wrap each dt/dd pair in `<div class="faq-pair">` for spacing (24px margin-bottom)
 - `<dt>` question: 16px, weight 500, no top margin
 - `<dd>` answer: 14px olive
-- Code spans: mono 12px on brand-tint background, 3px radius
+- Code spans: mono 12px, `--inline-code-bg` background, dark-warm text, no border, 2px radius
 - Tail paragraph: `.faq-tail` after `</dl>`, 13px stone, links to help page. Closes the FAQ without another section
 
 ### Testimonial wall (only with real quotes)
@@ -1304,7 +1310,7 @@ No template ships this section; build it only from real, attributed quotes (name
 
 - Two-column flex: brand mark (icon + name + tagline) left, colophon (links + ethos) right
 - Mark icon: 56px rounded 8px
-- Links: inline with middot (`&middot;`) separators between items, dark-warm color. Editorial pattern, not flex-gap
+- Links: middot separators live on `a:not(:last-child)::after`; anchors stay inline-block so wrapping never leaves a leading separator. Do not join the row with `&nbsp;`
 - Ethos: closing italic serif line, olive color, max-width 360px. The italic voice signals a personal sign-off
 - Tech credit, once. If the product builds on an upstream project or framework, credit it exactly once as a quiet footer line, never as a repeated selling point and never in the hero tagline. Grep the whole site for the upstream name and collapse it to this single instance; rewrite the hero around the product's own positioning. Hard facts that are not the credit (license, version) belong here too.
 - Collapses to single column below 880px

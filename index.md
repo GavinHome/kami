@@ -1,6 +1,6 @@
 # Kami
 
-Kami is a document layout design system for the AI era. Give an AI agent a brief, and Kami turns it into a finished document: a one-pager, resume, portfolio, slide deck, long report, letter, equity report, or changelog. Output is HTML that exports to PDF, PNG, or editable PPTX.
+Kami is a document layout design system for the AI era. Give an AI agent a brief, and Kami turns it into a finished document: a one-pager, resume, portfolio, slide deck, long report, letter, equity report, or changelog. Documents render through HTML to PDF or PNG; slide decks also have an editable PPTX path.
 
 Canonical product facts: <https://yobi.tw93.fun/projects/kami>
 
