@@ -75,8 +75,8 @@
       },
       {
         "@type": "Question",
-        "name": "セットアップ方法は？",
-        "acceptedAnswer": { "@type": "Answer", "text": "Claude Code（v2.1.142+）：/plugin marketplace add tw93/kami && /plugin install kami@kami。Codex plugin marketplace：codex plugin marketplace add tw93/kami && codex plugin add kami@kami。~/.agents を読む汎用エージェント：npx skills add tw93/kami/plugins/kami -a universal -g -y。Claude Desktop：GitHub Releases からリリースアセットの kami.zip をダウンロードします。Source code ZIP ではありません。Skills 設定でアップロードします。" }
+        "name": "ブランドのスタイルに合わせられますか？",
+        "acceptedAnswer": { "@type": "Answer", "text": "はい。ブランドカラー、フォント、レイアウトの希望をエージェントに伝えるか、ブランドプロファイルを用意できます。明示した要件がKamiのデフォルトより優先されます。" }
       },
       {
         "@type": "Question",
@@ -265,15 +265,19 @@
       <h2 class="section-title">インストールと呼び出し</h2>
       <p class="section-lede">「履歴書を作って」「スタートアップ紹介の一枚資料を作って」「登壇用スライドを作って」のように要件を伝えるだけで、skill が自動起動します。スラッシュコマンドは不要です。</p>
     </div>
-<pre class="code"><span class="c"># Claude Code (v2.1.142+)</span>
+<pre class="code code-wrap"><span class="c"># Claude Code (v2.1.142+)</span>
 /plugin marketplace add tw93/kami
 /plugin install kami@kami
 
-<span class="c"># Codex plugin marketplace</span>
+<span class="c"># Codex (CLI / Desktop)</span>
 codex plugin marketplace add tw93/kami
-codex plugin add kami@kami</pre>
-    <p class="section-lede" style="font-size:14px;"><code>~/.agents/</code> を読む汎用エージェント：<code>npx skills add tw93/kami/plugins/kami -a universal -g -y</code>。この plugin パスは生成済みの軽量 skill パッケージを公開します。単に <code>tw93/kami</code> を指定すると SKILL.md しかインストールされません。</p>
-    <p class="section-lede" style="font-size:14px;">Claude Desktop の場合はリリースアセットの <a href="https://github.com/tw93/kami/releases/latest/download/kami.zip" style="color:var(--brand); text-decoration:none; font-weight:500;">kami.zip</a> をダウンロードします。GitHub の Source code ZIP ではありません。Customize &gt; Skills &gt; "+" &gt; Create skill からそのままアップロードします。</p>
+codex plugin add kami@kami
+
+<span class="c"># 汎用エージェント</span>
+npx skills add tw93/kami/plugins/kami -a universal -g -y
+
+<span class="c"># Claude Desktop</span>
+<a href="https://github.com/tw93/kami/releases/latest/download/kami.zip" style="color:var(--brand); text-decoration:none;">kami.zip</a>をダウンロードし、Customize &gt; Skills &gt; "+" &gt; Create skillからアップロード</pre>
   </section>
 
   <!-- ============ 02 MANIFESTO ============ -->
@@ -698,8 +702,8 @@ beauty   = constraints × <span class="k">intention</span> ÷ noise</pre>
         <dd>8種類のドキュメントテンプレート：ワンページャー、長文ドキュメント、レター、ポートフォリオ、履歴書、スライド、個別株レポート、変更履歴に加え、ランディングページシステム（EN + CN + KO）。さらに18種のインラインSVG図表で視覚的な説明も可能です。出力はHTMLで、PDF、PNG、編集可能なPPTXスライドに変換できます。</dd>
       </div>
       <div class="faq-pair">
-        <dt>セットアップ方法は？</dt>
-        <dd>Claude Code（v2.1.142+）：<code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">/plugin marketplace add tw93/kami</code> の後に <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">/plugin install kami@kami</code>。Codex：<code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">codex plugin marketplace add tw93/kami</code> の後に <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">codex plugin add kami@kami</code>。<code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">~/.agents</code> を読む汎用エージェント：<code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">npx skills add tw93/kami/plugins/kami -a universal -g -y</code>。Claude Desktop：GitHub Releases からリリースアセットの kami.zip をダウンロードします。Source code ZIP ではありません。カスタマイズ &gt; スキルでアップロード。</dd>
+        <dt>ブランドのスタイルに合わせられますか？</dt>
+        <dd>はい。ブランドカラー、フォント、レイアウトの希望をエージェントに伝えるか、ブランドプロファイルを用意できます。明示した要件がKamiのデフォルトより優先されます。</dd>
       </div>
       <div class="faq-pair">
         <dt>対応言語は？</dt>

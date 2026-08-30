@@ -92,10 +92,10 @@
       },
       {
         "@type": "Question",
-        "name": "How do I set up Kami?",
+        "name": "Can Kami match my brand?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Claude Code (v2.1.142+): /plugin marketplace add tw93/kami && /plugin install kami@kami. Codex plugin marketplace: codex plugin marketplace add tw93/kami && codex plugin add kami@kami. Generic agents that read ~/.agents: npx skills add tw93/kami/plugins/kami -a universal -g -y. Claude Desktop: download the release asset kami.zip from GitHub Releases, not the Source code ZIP, and upload it in Skills settings."
+          "text": "Yes. Give the agent your brand colors, fonts, and layout preferences, or provide a brand profile. Your explicit brief always overrides Kami's defaults."
         }
       },
       {
@@ -287,15 +287,19 @@
       <h2 class="section-title">Install &amp; Invoke</h2>
       <p class="section-lede">Tell Claude what you need, for example "build me a resume", "make a one-pager for my startup", or "design a slide deck for my talk". The skill auto-triggers, no slash command needed.</p>
     </div>
-<pre class="code"><span class="c"># Claude Code (v2.1.142+)</span>
+<pre class="code code-wrap"><span class="c"># Claude Code (v2.1.142+)</span>
 /plugin marketplace add tw93/kami
 /plugin install kami@kami
 
-<span class="c"># Codex plugin marketplace</span>
+<span class="c"># Codex (CLI / Desktop)</span>
 codex plugin marketplace add tw93/kami
-codex plugin add kami@kami</pre>
-    <p class="section-lede" style="font-size:14px;">Generic agents that read from <code>~/.agents/</code>: <code>npx skills add tw93/kami/plugins/kami -a universal -g -y</code>. The plugin path exposes the generated lightweight skill bundle; a bare <code>tw93/kami</code> installs only SKILL.md.</p>
-    <p class="section-lede" style="font-size:14px;">Claude Desktop: download the release asset <a href="https://github.com/tw93/kami/releases/latest/download/kami.zip" style="color:var(--brand); text-decoration:none; font-weight:500;">kami.zip</a>, not GitHub's Source code ZIP, then upload it in Customize &gt; Skills &gt; "+" &gt; Create skill.</p>
+codex plugin add kami@kami
+
+<span class="c"># Universal agents</span>
+npx skills add tw93/kami/plugins/kami -a universal -g -y
+
+<span class="c"># Claude Desktop</span>
+Download <a href="https://github.com/tw93/kami/releases/latest/download/kami.zip" style="color:var(--brand); text-decoration:none;">kami.zip</a>, then upload it in Customize &gt; Skills &gt; "+" &gt; Create skill</pre>
   </section>
 
   <!-- ============ 02 MANIFESTO ============ -->
@@ -720,8 +724,8 @@ beauty   = constraints × <span class="k">intention</span> ÷ noise</pre>
         <dd>Eight document templates: one-pagers, long documents, letters, portfolios, resumes, slides, equity reports, and changelogs, plus a landing-page system (EN + CN + KO). Plus 18 inline SVG diagram types for visual explanations. Outputs are HTML that can be exported to PDF, PNG, or editable PPTX slide decks.</dd>
       </div>
       <div class="faq-pair">
-        <dt>How do I set it up?</dt>
-        <dd>Claude Code (v2.1.142+): <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">/plugin marketplace add tw93/kami</code> then <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">/plugin install kami@kami</code>. Codex: <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">codex plugin marketplace add tw93/kami</code> then <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">codex plugin add kami@kami</code>. Generic agents that read <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">~/.agents</code>: <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">npx skills add tw93/kami/plugins/kami -a universal -g -y</code>. Claude Desktop: download the release asset kami.zip from GitHub Releases, not the Source code ZIP, and upload it in Customize &gt; Skills. No slash command needed, the skill auto-triggers from natural requests.</dd>
+        <dt>Can Kami match my brand?</dt>
+        <dd>Yes. Give the agent your brand colors, fonts, and layout preferences, or provide a brand profile. Your explicit brief always overrides Kami's defaults.</dd>
       </div>
       <div class="faq-pair">
         <dt>What languages does it support?</dt>

@@ -330,6 +330,8 @@ Two tiers, both on registered tokens. A gradient tag oversells itself at this si
 
 **Philosophy**: tint depth should be one step lighter than what decoration wants. Prefer pale over saturated. In iteration, "gradient brush" often steals focus - lightest solid wins most of the time.
 
+Inside an already filled editorial highlight, do not stack a filled tag on top of the fill. Use an ivory surface and a text-only ink-blue label; the label names the passage without becoming a second color block.
+
 **Never**: `background: rgba(201, 100, 66, 0.18)` - WeasyPrint double-rectangle bug.
 
 ### Lists
@@ -457,11 +459,19 @@ Key numbers side-by-side (one-pager header, resume top, portfolio cover):
   font-variant-numeric: tabular-nums;   /* align digits in columns */
 }
 .metric-label { font-size: 9pt; color: var(--olive); white-space: nowrap; }
+.metric-suffix {
+  margin-left: 0.06em;
+  font-size: 0.58em;
+  font-weight: 400;
+  vertical-align: 0.08em;
+}
 ```
 
 This inline form is the print one, and it holds only because print labels are fixed short strings that never wrap. The value and label share a baseline; a label that wraps to a second line dangles below it and reads broken. Keep every label short enough for one line and set `white-space: nowrap`, so an over-long label surfaces as overflow during QA instead of silently wrapping. Fix by shortening the words, not by letting it wrap.
 
 On screen the labels are translated, retitled, and read at 375px, so a landing-page metric stacks instead (`flex-direction: column`). Same for slides. `production.md` pitfall #20 owns that call.
+
+Treat a multiplication sign in a display value as a suffix, not a second digit. In values such as `10×`, keep the true multiplication sign, set it near 60% of the numeral size, and optically align it to the numeral body. A full-size `×` reads like a letter and steals attention from the value.
 
 ### Section Header (`.kami-section-header`)
 

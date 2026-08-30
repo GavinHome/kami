@@ -226,6 +226,15 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.3pt;
   }
+  .metric .metric-suffix {
+    display: inline-block;
+    margin-left: 0.06em;
+    font-size: 0.58em;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0;
+    vertical-align: 0.08em;
+  }
   .metric .l {
     font-family: var(--sans);
     font-size: 10pt;
@@ -474,7 +483,7 @@
       <div class="l">harness layers that matter: verify, bound, feedback, fallback</div>
     </div>
     <div class="metric">
-      <div class="v">10×</div>
+      <div class="v">10<span class="metric-suffix">×</span></div>
       <div class="l">velocity gains trace to execution discipline, not model swaps</div>
     </div>
   </div>

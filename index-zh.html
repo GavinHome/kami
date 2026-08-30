@@ -75,8 +75,8 @@
       },
       {
         "@type": "Question",
-        "name": "怎么安装 Kami？",
-        "acceptedAnswer": { "@type": "Answer", "text": "Claude Code（v2.1.142+）：/plugin marketplace add tw93/kami && /plugin install kami@kami。Codex 插件市场：codex plugin marketplace add tw93/kami && codex plugin add kami@kami。读取 ~/.agents 的通用 agent：npx skills add tw93/kami/plugins/kami -a universal -g -y。Claude Desktop：从 GitHub Releases 下载 release asset kami.zip，不要下载 Source code 压缩包，然后在 Skills 设置中上传即可。" }
+        "name": "可以换成自己的品牌风格吗？",
+        "acceptedAnswer": { "@type": "Answer", "text": "可以。直接告诉 Agent 你的品牌色、字体和版式偏好，或提供品牌配置。你这次明确提出的要求，会优先于 Kami 的默认样式。" }
       },
       {
         "@type": "Question",
@@ -264,15 +264,19 @@
       <h2 class="section-title">安装与调用</h2>
       <p class="section-lede">直接告诉 Claude 你要什么，比如「帮我排版一份白皮书」「做一份简历」「帮我做一份作品集」，skill 会自动触发，无需斜杠命令。</p>
     </div>
-<pre class="code"><span class="c"># Claude Code (v2.1.142+)</span>
+<pre class="code code-wrap"><span class="c"># Claude Code (v2.1.142+)</span>
 /plugin marketplace add tw93/kami
 /plugin install kami@kami
 
-<span class="c"># Codex plugin marketplace</span>
+<span class="c"># Codex (CLI / Desktop)</span>
 codex plugin marketplace add tw93/kami
-codex plugin add kami@kami</pre>
-    <p class="section-lede" style="font-size:14px;">读取 <code>~/.agents/</code> 的通用 agent：<code>npx skills add tw93/kami/plugins/kami -a universal -g -y</code>。这个 plugin 路径暴露生成好的轻量 skill 包；直接用 <code>tw93/kami</code> 只会装到 SKILL.md。</p>
-    <p class="section-lede" style="font-size:14px;">Claude Desktop：下载 release asset <a href="https://github.com/tw93/kami/releases/latest/download/kami.zip" style="color:var(--brand); text-decoration:none; font-weight:500;">kami.zip</a>，不要下载 GitHub 的 Source code 压缩包，然后在 Customize &gt; Skills &gt; "+" &gt; Create skill 中直接上传。</p>
+codex plugin add kami@kami
+
+<span class="c"># 通用 Agent</span>
+npx skills add tw93/kami/plugins/kami -a universal -g -y
+
+<span class="c"># Claude Desktop</span>
+下载 <a href="https://github.com/tw93/kami/releases/latest/download/kami.zip" style="color:var(--brand); text-decoration:none;">kami.zip</a>，在 Customize &gt; Skills &gt; "+" &gt; Create skill 中上传</pre>
   </section>
 
   <!-- ============ 02 MANIFESTO ============ -->
@@ -724,8 +728,8 @@ beauty   = constraints × <span class="k">intention</span> ÷ noise</pre>
         <dd>八种文档模板：一页纸、长文档、信件、作品集、简历、幻灯片、个股研报、更新日志，外加一套落地页系统（中、英、韩文）。另有 18 种内联 SVG 图表用于可视化说明。输出为 HTML，可导出为 PDF、PNG 或可编辑的 PPTX 幻灯片。</dd>
       </div>
       <div class="faq-pair">
-        <dt>怎么安装？</dt>
-        <dd>Claude Code（v2.1.142+）：<code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">/plugin marketplace add tw93/kami</code>，然后 <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">/plugin install kami@kami</code>。Codex：<code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">codex plugin marketplace add tw93/kami</code>，然后 <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">codex plugin add kami@kami</code>。读取 <code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">~/.agents</code> 的通用 agent：<code style="font-family:var(--mono); font-size:0.9em; color:var(--brand);">npx skills add tw93/kami/plugins/kami -a universal -g -y</code>。Claude Desktop：从 GitHub Releases 下载 release asset kami.zip，不要下载 Source code 压缩包，然后在自定义 &gt; Skills 中上传即可。</dd>
+        <dt>可以换成自己的品牌风格吗？</dt>
+        <dd>可以。直接告诉 Agent 你的品牌色、字体和版式偏好，或提供品牌配置。你这次明确提出的要求，会优先于 Kami 的默认样式。</dd>
       </div>
       <div class="faq-pair">
         <dt>支持哪些语言？</dt>

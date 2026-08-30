@@ -911,6 +911,52 @@ def test_public_site_teaches_registered_tints_and_exact_radii() -> None:
           f"offenders: {', '.join(offenders)}")
 
 
+def test_reviewed_demo_details_keep_quiet_hierarchy() -> None:
+    """Small editorial cues should not turn back into colored or framed UI."""
+    def css_block(text: str, selector: str) -> str:
+        match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", text, re.DOTALL)
+        return match.group(1) if match else ""
+
+    offenders: list[str] = []
+    resume_surfaces = [
+        TEMPLATES / "resume.html",
+        TEMPLATES / "resume-en.html",
+        TEMPLATES / "resume-ko.html",
+        REPO_ROOT / "assets" / "demos" / "demo-musk-resume.html",
+        REPO_ROOT / "assets" / "demos" / "demo-resume-ko.html",
+    ]
+    for path in resume_surfaces:
+        text = path.read_text(encoding="utf-8")
+        highlight = css_block(text, ".os-highlight")
+        label = css_block(text, ".os-highlight .tag")
+        if "background: var(--ivory)" not in highlight:
+            offenders.append(f"{path.name}: chromatic highlight fill")
+        if "background: transparent" not in label or "color: var(--brand)" not in label:
+            offenders.append(f"{path.name}: filled highlight label")
+
+    print_demo = (REPO_ROOT / "assets" / "demos" / "demo-kami-print.html").read_text(
+        encoding="utf-8"
+    )
+    command = css_block(print_demo, ".cmd")
+    if re.search(r"(?:^|[;\n])\s*border\s*:", command):
+        offenders.append("demo-kami-print.html: framed command block")
+    if "border-radius: 4pt" not in command:
+        offenders.append("demo-kami-print.html: command block radius")
+
+    slides_demo = (REPO_ROOT / "assets" / "demos" / "demo-agent-slides.html").read_text(
+        encoding="utf-8"
+    )
+    suffix = css_block(slides_demo, ".metric .metric-suffix")
+    if '<span class="metric-suffix">×</span>' not in slides_demo:
+        offenders.append("demo-agent-slides.html: multiplier markup")
+    if "font-size: 0.58em" not in suffix or "vertical-align: 0.08em" not in suffix:
+        offenders.append("demo-agent-slides.html: multiplier optics")
+
+    check("reviewed demo details keep quiet hierarchy",
+          not offenders,
+          f"offenders: {', '.join(offenders)}")
+
+
 def test_table_components_keep_one_quiet_rule_system() -> None:
     """Tables should read as content first, with rules acting as quiet guides."""
     def css_block(text: str, selector: str) -> str:
