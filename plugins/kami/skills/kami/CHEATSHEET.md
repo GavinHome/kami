@@ -293,6 +293,8 @@ Source templates intentionally keep `{{...}}` fields. Run `python3 scripts/build
 
 For new documents built from raw material, validate the content IR before layout and re-check coverage after filling: `python3 scripts/build.py --check-content content.json [filled.html]` (schemas in `references/schemas/`). Before shipping a filled PDF, run `python3 scripts/build.py --check-visual path/to/filled.pdf` and view every exported page image against the printed checklist.
 
+**Strict mathematics**: author formulas only as standard LaTeX `\( inline \)` or `\[ display \]`. Before delivery run `bash scripts/ensure_mathjax.sh`, `python3 scripts/math_render.py --in-place filled.html`, then `python3 scripts/math_render.py --check filled.html`. The accepted HTML/PDF result is MathJax SVG, never Unicode pseudo-formulas, raw TeX, or formula screenshots.
+
 Marp variant deck (opt-in): `assets/templates/marp/`. Render with local `marp-cli`. See design.md §8 + production.md Part 2.5.
 
 ## Content quality (one rule per type)
