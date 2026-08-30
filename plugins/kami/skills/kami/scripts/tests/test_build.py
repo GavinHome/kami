@@ -762,26 +762,239 @@ def test_font_probe_rejects_empty_and_truncated_bundles() -> None:
           str(report))
 
 
-def test_brand_left_rule_uses_one_of_three_weights() -> None:
-    """The brand left rule is one gesture at three weights, picked by role.
-
-    design.md «The brand left rule» assigns 2.5pt to a structural divide, 2pt
-    to an aside, and 1.4pt to the edge of a filled block. A fourth value is not
-    a new idea, it is drift: the same `.callout` shipping at 1.8pt in one-pager
-    and 2pt in long-doc is what teaches a reader of these templates that the
-    number is theirs to pick, and inventing rules is exactly the drift the
-    generated documents show.
-    """
-    allowed = {"2.5", "2", "1.4"}
-    pattern = re.compile(r"border-left:\s*([\d.]+)pt solid var\(--brand\)")
+def test_print_surfaces_have_no_ornamental_brand_lines() -> None:
+    """Print hierarchy comes from type, spacing, labels, and fill, not ticks."""
+    patterns = {
+        "brand side rule": re.compile(
+            r"border-left:\s*[\d.]+(?:pt|px)\s+solid\s+var\(--brand\)"
+        ),
+        "eyebrow tick": re.compile(
+            r"\.(?:eyebrow|ticker-eyebrow|cover-eyebrow)::before"
+        ),
+        "short cover or contact rule": re.compile(
+            r"(?:class=[\"'](?:cover-line|contact-line)[\"']|"
+            r"\.(?:cover-line|contact-line)\s*\{)"
+        ),
+    }
     offenders: list[str] = []
-    for path in sorted(TEMPLATES.glob("*.html")):
-        for weight in pattern.findall(path.read_text(encoding="utf-8")):
-            if weight not in allowed:
-                offenders.append(f"{path.name}: {weight}pt")
-    check("brand left rule uses one of the three registered weights",
+    sources = list(TEMPLATES.glob("*.html")) + list((REPO_ROOT / "assets" / "demos").glob("*.html"))
+    for path in sorted(sources):
+        text = path.read_text(encoding="utf-8")
+        for label, pattern in patterns.items():
+            if pattern.search(text):
+                offenders.append(f"{path.name}: {label}")
+
+    for name in ("slides.py", "slides-en.py"):
+        text = (TEMPLATES / name).read_text(encoding="utf-8")
+        if "def add_line(" in text:
+            offenders.append(f"{name}: generic decorative add_line helper")
+
+    check("print surfaces contain no ornamental brand lines",
           not offenders,
           f"offenders: {', '.join(offenders)}")
+
+
+def test_shipped_surfaces_keep_subtractive_defaults() -> None:
+    """A default surface stays flat, small-radius, and free of filler motion."""
+    offenders: list[str] = []
+
+    print_sources = [
+        path for path in TEMPLATES.glob("*.html")
+        if not path.name.startswith("landing-page")
+    ] + list((REPO_ROOT / "assets" / "demos").glob("*.html"))
+    large_print_radius = re.compile(
+        r"border-radius:\s*(?:[789]|[1-9][0-9])(?:\.[0-9]+)?pt"
+    )
+    for path in sorted(print_sources):
+        if large_print_radius.search(path.read_text(encoding="utf-8")):
+            offenders.append(f"{path.name}: screen-sized print radius")
+
+    landing_forbidden = (
+        "filter: blur",
+        "linear-gradient(",
+        ".gallery-frame::after",
+    )
+    default_surface_selectors = (
+        ".hero",
+        ".section-head",
+        ".demo-card",
+        ".price-card",
+        ".gallery-caption",
+    )
+    for path in sorted(TEMPLATES.glob("landing-page*.html")):
+        text = path.read_text(encoding="utf-8")
+        for token in landing_forbidden:
+            if token in text:
+                offenders.append(f"{path.name}: {token}")
+        for selector in default_surface_selectors:
+            match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", text, re.DOTALL)
+            if match and "box-shadow" in match.group(1):
+                offenders.append(f"{path.name}: {selector} shadow")
+
+    public_pages = [
+        REPO_ROOT / "index.html",
+        REPO_ROOT / "index-zh.html",
+        REPO_ROOT / "index-tw.html",
+        REPO_ROOT / "index-ja.html",
+        REPO_ROOT / "index-ko.html",
+    ]
+    public_forbidden = (
+        "border-left: 1.4pt solid var(--brand)",
+        "box-shadow: 0 4px 24px",
+        'class="dash demo"',
+        'class="tag brush"',
+        'class="shadow-row"',
+    )
+    for path in public_pages:
+        text = path.read_text(encoding="utf-8")
+        for token in public_forbidden:
+            if token in text:
+                offenders.append(f"{path.name}: {token}")
+
+    site_css = (REPO_ROOT / "styles.css").read_text(encoding="utf-8")
+    for token in ("@keyframes fadeIn", "ul.dash", ".tag.brush", ".shadow-row"):
+        if token in site_css:
+            offenders.append(f"styles.css: {token}")
+
+    for selector in (".family", ".comp", ".chart-card", ".quote"):
+        match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", site_css, re.DOTALL)
+        block = match.group(1) if match else ""
+        if "box-shadow" in block:
+            offenders.append(f"styles.css: {selector} shadow")
+        if selector in {".family", ".comp", ".chart-card"} and re.search(
+                r"\bborder:\s*1px", block):
+            offenders.append(f"styles.css: {selector} stacked border")
+        if selector == ".quote" and "border-left" in block:
+            offenders.append("styles.css: quote side rule")
+
+    check("shipped surfaces keep subtractive visual defaults",
+          not offenders,
+          f"offenders: {', '.join(offenders)}")
+
+
+def test_public_site_teaches_registered_tints_and_exact_radii() -> None:
+    """Visible examples must describe tokens, not obsolete alpha recipes."""
+    pages = [
+        REPO_ROOT / "index.html",
+        REPO_ROOT / "index-zh.html",
+        REPO_ROOT / "index-tw.html",
+        REPO_ROOT / "index-ja.html",
+        REPO_ROOT / "index-ko.html",
+    ]
+    stale_tint_labels = (
+        'class="opacity">0.18',
+        'class="tag calm">Light 0.08',
+        'class="tag standard">Standard 0.18',
+        'class="tag calm">极淡 0.08',
+        'class="tag standard">标准 0.18',
+        'class="tag calm">極淡 0.08',
+        'class="tag standard">標準 0.18',
+        "equivalent solid hex",
+        "等效实色",
+        "等效實色",
+        "등가 솔리드 hex",
+    )
+    offenders: list[str] = []
+    for path in pages:
+        text = path.read_text(encoding="utf-8")
+        for token in stale_tint_labels:
+            if token in text:
+                offenders.append(f"{path.name}: {token}")
+        for radius in ("2", "4"):
+            if f'class="box" style="border-radius:{radius}px"' in text:
+                offenders.append(f"{path.name}: {radius}px print radius")
+            if f'class="box" style="border-radius:{radius}pt"' not in text:
+                offenders.append(f"{path.name}: missing {radius}pt print radius")
+
+    check("public site teaches registered tints and exact print radii",
+          not offenders,
+          f"offenders: {', '.join(offenders)}")
+
+
+def test_table_components_keep_one_quiet_rule_system() -> None:
+    """Tables should read as content first, with rules acting as quiet guides."""
+    def css_block(text: str, selector: str) -> str:
+        match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", text, re.DOTALL)
+        return match.group(1) if match else ""
+
+    def vertical_padding(block: str) -> float:
+        match = re.search(r"padding:\s*([\d.]+)pt", block)
+        return float(match.group(1)) if match else -1
+
+    documents = []
+    offenders: list[str] = []
+    for path in sorted(TEMPLATES.glob("*.html")):
+        text = path.read_text(encoding="utf-8")
+        if ".kami-table" not in text:
+            continue
+        documents.append(path)
+        header = css_block(text, "table th, .kami-table th")
+        body = css_block(text, "table td, .kami-table td")
+        compact_header = css_block(text, "table.compact th, .kami-table.compact th")
+        compact_body = css_block(text, "table.compact td, .kami-table.compact td")
+        total = css_block(text, "table .total td, .kami-table .total td")
+
+        if "border-bottom: 0.6pt solid var(--border)" not in header:
+            offenders.append(f"{path.name}: header rule")
+        if "border-bottom: 0.25pt solid var(--border)" not in body:
+            offenders.append(f"{path.name}: body rule")
+        if "border-top: 0.6pt solid var(--border)" not in total:
+            offenders.append(f"{path.name}: total rule")
+        if "var(--brand)" in "\n".join((header, body, total)):
+            offenders.append(f"{path.name}: accent-colored rule")
+
+        if path.name.startswith("one-pager"):
+            header_floor, body_floor = 5.0, 4.0
+        elif path.name.startswith("resume"):
+            header_floor, body_floor = 5.0, 4.0
+        else:
+            header_floor, body_floor = 6.0, 5.0
+        if vertical_padding(header) < header_floor:
+            offenders.append(f"{path.name}: header padding")
+        if vertical_padding(body) < body_floor:
+            offenders.append(f"{path.name}: body padding")
+        if vertical_padding(compact_header) < 3.0:
+            offenders.append(f"{path.name}: compact header padding")
+        if vertical_padding(compact_body) < 2.5:
+            offenders.append(f"{path.name}: compact body padding")
+
+    check("all document families ship the shared table component",
+          len(documents) == 18,
+          f"found {len(documents)}: {', '.join(path.name for path in documents)}")
+    check("document tables use neutral hairlines and readable row padding",
+          not offenders,
+          f"offenders: {', '.join(offenders)}")
+
+    slide_paths = [
+        TEMPLATES / "slides-weasy.html",
+        TEMPLATES / "slides-weasy-en.html",
+        TEMPLATES / "slides-weasy-ko.html",
+        TEMPLATES / "marp" / "slides-marp.css",
+        TEMPLATES / "marp" / "slides-marp-en.css",
+    ]
+    slide_offenders = []
+    for path in slide_paths:
+        text = path.read_text(encoding="utf-8")
+        body = css_block(text, "table.data td")
+        first = css_block(text, "table.data td:first-child")
+        if "border-bottom: 0.25pt solid var(--border)" not in body:
+            slide_offenders.append(f"{path.name}: body rule")
+        if "color: var(--dark-warm)" not in first or "var(--brand)" in first:
+            slide_offenders.append(f"{path.name}: first-column color")
+        if vertical_padding(body) < 8.0:
+            slide_offenders.append(f"{path.name}: row padding")
+    check("slide data tables use the same quiet neutral system",
+          not slide_offenders,
+          f"offenders: {', '.join(slide_offenders)}")
+
+    default_stripes = []
+    for path in sorted(TEMPLATES.glob("equity-report*.html")):
+        text = path.read_text(encoding="utf-8")
+        if re.search(r'<table[^>]*class="[^"]*striped', text):
+            default_stripes.append(path.name)
+    check("equity report tables do not enable striping by default",
+          not default_stripes,
+          f"offenders: {', '.join(default_stripes)}")
 
 
 def test_documented_snippets_answer_to_template_rules() -> None:
@@ -2866,7 +3079,7 @@ def test_skill_routes_visual_repairs_and_generated_assets_without_losing_contrac
 def test_visual_checklist_and_output_dir() -> None:
     from visual import REVIEW_CHECKLIST, visual_output_dir
     check("visual checklist has stable size and no em dash",
-          len(REVIEW_CHECKLIST) == 8 and all("\u2014" not in line for line in REVIEW_CHECKLIST))
+          len(REVIEW_CHECKLIST) == 10 and all("\u2014" not in line for line in REVIEW_CHECKLIST))
     out = visual_output_dir(Path("/tmp/docs/report.pdf"))
     check("visual output dir sits next to the pdf",
           out == Path("/tmp/docs/report-visual"), str(out))

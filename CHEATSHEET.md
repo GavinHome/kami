@@ -12,7 +12,7 @@ One-page quick reference. Scan before filling a template or tweaking a detail. F
 6. Line-height: headlines 1.1-1.3 / dense 1.4-1.45 / reading 1.5-1.55
 7. Letter-spacing: Chinese body with TsangerJinKai 0.1-0.2pt (dense layouts may push to 0.3pt); English body 0; small labels and all-caps overlines get +0.2-1pt
 8. Tag backgrounds solid hex, no rgba (WeasyPrint double-rectangle bug)
-9. Depth via ring / whisper shadow, no hard drop shadows
+9. No decorative ticks, short rules, or side accents; every line must encode separation, state, or relationship
 10. No italic in templates or demos
 
 ## Sources and Materials
@@ -25,11 +25,11 @@ Full pass in SKILL.md Step 2.1. The one contract worth repeating: a number you c
 | Role         | Hex           | Use                                                 |
 | ------------ | ------------- | --------------------------------------------------- |
 | Parchment    | `#f5f4ed`     | Page background                                     |
-| Ivory        | `#faf9f5`     | Card / lifted container                             |
+| Ivory        | `#faf9f5`     | Quiet filled container                              |
 | Warm Sand    | `#e8e6dc`     | Button / interactive surface                        |
 | Dark Surface | `#30302e`     | Dark container                                      |
 | Deep Dark    | `#141413`     | Dark page background                                |
-| **Brand**    | **`#1B365D`** | **Accent · CTA · title left bar (≤ 5% of surface)** |
+| **Brand**    | **`#1B365D`** | **Accent · CTA · key labels (≤ 5% of surface)**     |
 | Ink Light    | `#2D5A8A`     | Links on dark surfaces                              |
 | Near Black   | `#141413`     | Primary text                                        |
 | Dark Warm    | `#3d3d3a`     | Secondary text · table headers · links              |
@@ -39,16 +39,13 @@ Full pass in SKILL.md Step 2.1. The one contract worth repeating: a number you c
 | Border Soft  | `#e5e3d8`     | Secondary border · row separator                    |
 
 
-**rgba -> solid** (parchment base + ink-blue):
+**Registered solid tints** (never substitute `rgba()`):
 
 
-| Alpha    | Solid                       |
-| -------- | --------------------------- |
-| 0.08     | `#EEF2F7`                   |
-| 0.14     | `#E4ECF5`                   |
-| **0.18** | **`#E4ECF5`** ← default tag |
-| 0.22     | `#D0DCE9`                   |
-| 0.30     | `#D6E1EE`                   |
+| Role        | Solid                       |
+| ----------- | --------------------------- |
+| Quiet fill  | `#EEF2F7`                   |
+| Default tag | **`#E4ECF5`**               |
 
 
 ## Type (print pt)
@@ -139,7 +136,8 @@ Any font-family that may render Chinese or Japanese must include a CJK fallback,
 
 ## Radius scale
 
-`4pt -> 6pt -> 8pt (default) -> 12pt -> 16pt -> 24pt -> 32pt (hero)`
+Print: `2pt` for chips, `4pt` for blocks. Screen: `8px` for blocks and
+`999px` only for pill actions. Do not invent intermediate steps for emphasis.
 
 ## Common CSS snippets
 
@@ -147,7 +145,7 @@ Any font-family that may render Chinese or Japanese must include a CJK fallback,
 
 ```css
 .card {
-  background: var(--ivory);       /* the fill IS the lift; no closed border */
+  background: var(--ivory);       /* one quiet grouping cue; no border/shadow */
   border-radius: 4pt;
   padding: 16pt 20pt;
 }
@@ -155,7 +153,7 @@ Any font-family that may render Chinese or Japanese must include a CJK fallback,
 
 A sub-1pt closed border plus a radius renders as a double ring (production.md
 pitfall #2) and fails `scripts/build.py --check`. To give a card more weight,
-mark one edge with `border-left: 1.4pt solid var(--brand)`.
+strengthen its label or opening sentence. Do not add an accent edge.
 
 ### Tag (solid fill, never rgba)
 
@@ -182,13 +180,10 @@ h2 {
 ```
 
 Type carries the hierarchy; a section head needs no rule, bar, or underline.
-`changelog*.html` is the one template that adds `border-left: 2.5pt solid
-var(--brand)` to `h2`, because release notes are scanned for group boundaries
-rather than read straight through. Do not carry that bar into other documents:
-repeated down a page it turns every heading into a container and is the single
-most common way a kami document stops looking like one. `resume*.html` uses a
-quiet bottom rule, and keeps project rows borderless so section titles never
-create double rules or lonely page-top lines.
+This also applies to `changelog*.html`: release groups stay scannable through
+type, numbering, and spacing. `resume*.html` uses a quiet full-width bottom
+rule because it separates major content regions, and keeps project rows
+borderless so section titles never create double rules or lonely page-top lines.
 
 ### Table (kami-table)
 
@@ -201,21 +196,27 @@ table, .kami-table {
   font-size: 9.5pt; margin: 12pt 0; break-inside: avoid;
 }
 table th { text-align: left; font-weight: 500; color: var(--dark-warm);
-  padding: 6pt 8pt; border-bottom: 1pt solid var(--border); }
-table td { padding: 5pt 8pt; border-bottom: 0.3pt solid var(--border-soft);
+  padding: 6pt 8pt; border-bottom: 0.6pt solid var(--border); }
+table td { padding: 5pt 8pt; border-bottom: 0.25pt solid var(--border);
   vertical-align: top; }
+table.compact th { padding: 3pt 6pt; font-size: 8pt; }
+table.compact td { padding: 2.5pt 6pt; font-size: 8pt; line-height: 1.4; }
+table .total td { font-weight: 500; border-top: 0.6pt solid var(--border);
+  border-bottom: none; }
 ```
 
 
 | Variant   | Class              | Effect                                               |
 | --------- | ------------------ | ---------------------------------------------------- |
-| Compact   | `.compact`         | 8pt font, tight padding (data-dense tables)          |
+| Compact   | `.compact`         | 8pt font, 3pt / 2.5pt vertical padding; use only when density requires it |
 | Financial | `.financial`       | Right-align all columns except first, `tabular-nums` |
-| Striped   | `.striped`         | Alternating `var(--ivory)` row background            |
-| Total row | `.total` on `<tr>` | Bold, brand top border, no bottom border             |
+| Striped   | `.striped`         | Neutral rows only for 8+ body rows that remain hard to track   |
+| Total row | `.total` on `<tr>` | Bold, 0.6pt neutral top rule, no bottom border       |
 
 
-Combine freely: `<table class="kami-table financial striped">`.
+Start without striping. Add it only after the rendered 8+ row table fails the row-tracking check: `<table class="kami-table financial striped">`.
+
+Table acceptance: all rules use `--border`; header and total rules are 0.6pt, body rules are 0.25pt; normal vertical padding is at least 6pt / 5pt, compact padding is at least 3pt / 2.5pt. No tinted header, category-colored value, brand-colored rule, vertical grid, or framed box.
 
 ### Metric (data card)
 
@@ -233,8 +234,8 @@ Combine freely: `<table class="kami-table financial striped">`.
 
 ```css
 .quote {
-  border-left: 2pt solid var(--brand);
-  padding: 4pt 0 4pt 14pt;
+  margin: 12pt 16pt;
+  padding: 4pt 0;
   color: var(--olive);
   line-height: 1.55;
 }
@@ -350,12 +351,12 @@ Resume visual rule: header and section titles carry the only structural rules. T
 | Headline            | serif 500, line-height 1.10-1.30                               |
 | Reading body        | serif 400, 9.5-10pt, 1.55 (CN pins `--sans: var(--serif)`)     |
 | Emphasize a number  | `color: var(--brand)`, no bold                                 |
-| Raise a passage     | `.callout`: ivory fill + 2pt brand left rule + 3pt radius        |
-| Quote               | same 2pt left rule + olive, no fill (fill is what makes a callout) |
+| Raise a passage     | `.callout`: ivory fill + 3pt radius, no accent edge              |
+| Quote               | indented olive text with reading space, no fill or side rule     |
 | Code                | `long-doc` `pre` / `code`: ivory fill, 4pt / 2pt radius, no border |
 | Key figures         | `one-pager` `.metric`: baseline row, transparent, not a card    |
 | Buttons             | `landing-page` `.btn-primary` / `.btn-ghost` (screen only)      |
-| Section start       | `long-doc` `h2`: serif, no bar (`changelog` `h2` is the exception) |
+| Section start       | serif scale and margin only, no tick, side bar, or short rule    |
 | Cover               | Display heading + right-aligned author/date + heavy whitespace |
 | Figure SVG          | `width: 100%; height: auto; max-height: <safe>`. Never `max-height` alone (starves width on wide viewBoxes; production.md #17). |
 | Metric labels (4-col) | Soft cap 14-18 chars at 9pt Charter; trim context, don't wrap (production.md #18). |

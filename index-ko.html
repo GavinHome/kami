@@ -19,8 +19,8 @@
   <meta property="og:description" content="Kami - AI 기반 전문 문서를 위한 따뜻한 양피지 디자인 시스템. 하나의 강조색, 세리프 주도 계층 구조, 에디토리얼 여백으로 구성됩니다.">
   <meta property="og:url" content="https://kami.tw93.fun/index-ko.html">
   <meta property="og:image" content="https://kami.tw93.fun/assets/showcase/kami-landing.png">
-  <meta property="og:image:width" content="3110">
-  <meta property="og:image:height" content="2392">
+  <meta property="og:image:width" content="1555">
+  <meta property="og:image:height" content="1000">
   <meta property="og:locale" content="ko_KR">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Kami: AI 에이전트를 위한 문서 디자인 시스템">
@@ -302,7 +302,7 @@ codex plugin add kami@kami</pre>
       <li><span class="n">5</span><p>세리프 본문은 400, 제목은 500. 합성 볼드 사용 금지</p></li>
       <li><span class="n">6</span><p>세 가지 행간 밴드: 타이트 제목 1.1-1.3 / 밀집 1.4-1.45 / 읽기 1.5-1.55</p></li>
       <li><span class="n">7</span><p>태그 배경은 반드시 솔리드 hex; rgba 금지, WeasyPrint 이중 사각형 버그</p></li>
-      <li><span class="n">8</span><p>그림자: 링 또는 위스퍼만 허용, 하드 드롭 섀도우 금지</p></li>
+      <li><span class="n">8</span><p>표면은 기본적으로 평평하게 두고, 실제로 떠 있는 스크린샷이나 팝오버에만 아주 옅은 그림자를 사용</p></li>
     </ol>
   </section>
 
@@ -324,7 +324,7 @@ codex plugin add kami@kami</pre>
 
     <h3 class="subhead">Brand</h3>
     <div class="swatches">
-      <div class="swatch brand"><div class="chip" style="background:#1B365D"></div><div class="info"><p class="name">Ink Blue</p><p class="role">기본 색상 · CTA · 인용 바 · 섹션 오버라인</p><span class="hex">#1B365D</span></div></div>
+      <div class="swatch brand"><div class="chip" style="background:#1B365D"></div><div class="info"><p class="name">Ink Blue</p><p class="role">기본 색상 · CTA · 레이블 · 섹션 오버라인</p><span class="hex">#1B365D</span></div></div>
       <div class="swatch"><div class="chip" style="background:#2D5A8A"></div><div class="info"><p class="name">Ink Light</p><p class="role">다크 표면 위 링크 · 밝은 변형</p><span class="hex">#2D5A8A</span></div></div>
       <div class="swatch"><div class="chip" style="background:#30302e"></div><div class="info"><p class="name" style="color:var(--deep-dark)">Dark Surface</p><p class="role">다크 테마 컨테이너 · 웜 차콜</p><span class="hex">#30302E</span></div></div>
       <div class="swatch"><div class="chip" style="background:#b53333"></div><div class="info"><p class="name">Error</p><p class="role">오류 상태, 깊은 따뜻한 레드</p><span class="hex">#B53333</span></div></div>
@@ -338,14 +338,11 @@ codex plugin add kami@kami</pre>
       <div class="swatch"><div class="chip" style="background:#6b6a64"></div><div class="info"><p class="name">Stone</p><span class="hex">#6b6a64</span></div></div>
     </div>
 
-    <h3 class="subhead">Tag Tints: rgba에서 솔리드 hex로</h3>
-    <p style="font-size:14px; color: var(--olive); margin: 0 0 16px; line-height: 1.55;">양피지 위 잉크 블루 <code style="font-family:var(--mono);font-size:12px;background:#EEF2F7;color:var(--brand);padding:1px 5px;border-radius:2px">#1B365D</code>의 솔리드 hex 등가값. 태그는 WeasyPrint 이중 사각형 렌더링 버그를 피하기 위해 <code style="font-family:var(--mono);font-size:12px;background:#EEF2F7;color:var(--brand);padding:1px 5px;border-radius:2px">rgba()</code> 대신 솔리드 hex를 사용합니다.</p>
+    <h3 class="subhead">태그 배경색</h3>
+    <p style="font-size:14px; color: var(--olive); margin: 0 0 16px; line-height: 1.55;">등록된 솔리드 색상은 두 단계만 사용합니다. <code style="font-family:var(--mono);font-size:12px;background:#EEF2F7;color:var(--brand);padding:1px 5px;border-radius:2px">#EEF2F7</code>은 약한 표현, <code style="font-family:var(--mono);font-size:12px;background:#E4ECF5;color:var(--brand);padding:1px 5px;border-radius:2px">#E4ECF5</code>는 기본값입니다. 솔리드 hex는 WeasyPrint의 이중 사각형 문제도 막습니다.</p>
     <div class="tint-strip">
-      <div class="tint"><span class="flag">&nbsp;</span><span class="sample" style="background:#EEF2F7">Tag sample</span><p class="opacity">0.08</p><span class="hex">#EEF2F7</span></div>
-      <div class="tint"><span class="flag">&nbsp;</span><span class="sample" style="background:#E4ECF5">Tag sample</span><p class="opacity">0.14</p><span class="hex">#E4ECF5</span></div>
-      <div class="tint default"><span class="flag">Default</span><span class="sample" style="background:#E4ECF5">Tag sample</span><p class="opacity">0.18</p><span class="hex">#E4ECF5</span></div>
-      <div class="tint"><span class="flag">&nbsp;</span><span class="sample" style="background:#D0DCE9">Tag sample</span><p class="opacity">0.22</p><span class="hex">#D0DCE9</span></div>
-      <div class="tint"><span class="flag">&nbsp;</span><span class="sample" style="background:#D6E1EE">Tag sample</span><p class="opacity">0.30</p><span class="hex">#D6E1EE</span></div>
+      <div class="tint"><span class="flag">Recede</span><span class="sample" style="background:#EEF2F7">Tag sample</span><p class="opacity">Quiet</p><span class="hex">#EEF2F7</span></div>
+      <div class="tint default"><span class="flag">Default</span><span class="sample" style="background:#E4ECF5">Tag sample</span><p class="opacity">기본</p><span class="hex">#E4ECF5</span></div>
     </div>
   </section>
 
@@ -433,31 +430,13 @@ codex plugin add kami@kami</pre>
 
     <h3 class="subhead">Radii</h3>
     <div class="radii">
-      <div class="radius"><div class="box" style="border-radius:4px"></div><div class="r"><b>4</b> pt</div><div class="label">타이트</div></div>
-      <div class="radius"><div class="box" style="border-radius:6px"></div><div class="r"><b>6</b> pt</div><div class="label">코드 블록</div></div>
-      <div class="radius"><div class="box" style="border-radius:8px"></div><div class="r"><b>8</b> pt</div><div class="label">기본 카드</div></div>
-      <div class="radius"><div class="box" style="border-radius:12px"></div><div class="r"><b>12</b> pt</div><div class="label">컨테이너</div></div>
-      <div class="radius"><div class="box" style="border-radius:16px"></div><div class="r"><b>16</b> pt</div><div class="label">피처 카드</div></div>
-      <div class="radius"><div class="box" style="border-radius:24px"></div><div class="r"><b>24</b> pt</div><div class="label">대형 컨테이너</div></div>
-      <div class="radius"><div class="box" style="border-radius:32px"></div><div class="r"><b>32</b> pt</div><div class="label">히어로</div></div>
+      <div class="radius"><div class="box" style="border-radius:2pt"></div><div class="r"><b>2</b> pt</div><div class="label">인쇄 태그</div></div>
+      <div class="radius"><div class="box" style="border-radius:4pt"></div><div class="r"><b>4</b> pt</div><div class="label">인쇄 블록</div></div>
+      <div class="radius"><div class="box" style="border-radius:8px"></div><div class="r"><b>8</b> px</div><div class="label">화면 블록</div></div>
     </div>
 
-    <h3 class="subhead">깊이: 세 가지 그림자 방식</h3>
-    <p style="font-size:14px; color: var(--olive); margin: 0 0 12px; line-height: 1.55;">Kami는 전통적인 하드 섀도우를 피합니다. 깊이감은 링 섀도우, 위스퍼 섀도우, 명암 교차를 통해 표현합니다.</p>
-    <div class="shadow-row">
-      <div class="shadow-demo sd-ring">
-        <p class="t">링 섀도우</p>
-        <p class="s">0 0 0 1pt var(--ring-warm)<br>&nbsp;<br>버튼 · 카드 호버</p>
-      </div>
-      <div class="shadow-demo sd-whisper">
-        <p class="t">위스퍼 섀도우</p>
-        <p class="s">0 4pt 24pt rgba(0,0,0,0.05)<br>&nbsp;<br>부드러운 부상 · 피처 카드</p>
-      </div>
-      <div class="shadow-demo sd-alt">
-        <p class="t">라이트 ⇌ 다크</p>
-        <p class="s">parchment ⇌ deep-dark<br>&nbsp;<br>섹션 레벨 · 가장 강한 대비</p>
-      </div>
-    </div>
+    <h3 class="subhead">깊이</h3>
+    <p style="font-size:14px; color: var(--olive); margin: 0; line-height: 1.55;">표면은 기본적으로 평평합니다. 여백, 하나의 조용한 채움, 꼭 필요한 중성 헤어라인으로 계층을 만듭니다. 아주 옅은 그림자는 실제로 떠 있는 스크린샷이나 팝오버에만 사용합니다.</p>
   </section>
 
   <!-- ============ 06 COMPONENTS ============ -->
@@ -471,7 +450,7 @@ codex plugin add kami@kami</pre>
     <div class="comp-grid">
       <div class="comp">
         <h3>버튼</h3>
-        <p class="hint">하드 드롭 대신 링 섀도우 · 8pt radius</p>
+        <p class="hint">채움 + 테두리 · 그림자 없음 · 8px radius</p>
         <div class="demo" style="display:flex; gap:10px; flex-wrap:wrap;">
           <span class="btn btn-primary">Primary CTA</span>
           <span class="btn btn-secondary">Secondary</span>
@@ -479,17 +458,16 @@ codex plugin add kami@kami</pre>
         </div>
       </div>
       <div class="comp">
-        <h3>태그, 세 단계</h3>
-        <p class="hint">솔리드 hex · 약에서 강으로 선택</p>
+        <h3>태그, 두 단계</h3>
+        <p class="hint">솔리드 hex · 약한 표현 또는 기본</p>
         <div class="demo" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-          <span class="tag calm">Light 0.08</span>
-          <span class="tag standard">Standard 0.18</span>
-          <span class="tag brush">Brush gradient</span>
+          <span class="tag calm">약한 채움</span>
+          <span class="tag standard">기본 태그</span>
         </div>
       </div>
       <div class="comp">
         <h3>인용</h3>
-        <p class="hint">좌측 2pt brand solid + olive 텍스트</p>
+        <p class="hint">olive 텍스트 + 이탤릭 · 측면 선 없음</p>
         <blockquote class="quote">천 번의 거절 끝에 하나의 승낙, 장식보다 명확함을 우선합니다.</blockquote>
       </div>
       <div class="comp">
@@ -509,9 +487,9 @@ codex plugin add kami@kami</pre>
         </div>
       </div>
       <div class="comp">
-        <h3>대시 목록</h3>
-        <p class="hint">불릿 대신 대시 · 에디토리얼 톤</p>
-        <ul class="dash demo">
+        <h3>일반 목록</h3>
+        <p class="hint">간격으로 리듬 형성 · 기호 없음</p>
+        <ul class="plain-list demo">
           <li>따뜻한 양피지, 순백은 절대 아님</li>
           <li>잉크 블루 강조색, 두 번째 색상 없음</li>
           <li>세리프가 권위를 담당</li>
@@ -527,9 +505,9 @@ document = <span class="k">serif</span> × hierarchy + generous_space
 beauty   = constraints × <span class="k">intention</span> ÷ noise</pre>
       </div>
       <div class="comp">
-        <h3>피처 카드</h3>
-        <p class="hint">whisper shadow + 16pt radius</p>
-        <div class="demo" style="background:var(--ivory); border-radius:16px; padding:18px 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.05); border: 1px solid var(--border-cream);">
+        <h3>조용한 카드</h3>
+        <p class="hint">ivory 채움 하나 + 8px radius · 테두리와 그림자 없음</p>
+        <div class="demo" style="background:var(--ivory); border-radius:8px; padding:18px 20px;">
           <p style="font-family:var(--serif); font-weight:500; font-size:15px; margin:0 0 6px; color:var(--near-black);">Tesla Company Profile · One-Pager</p>
           <p style="font-size:12px; color:var(--olive); margin:0 0 10px; line-height:1.5;">단일 A4 페이지 · 메트릭 카드 4개 + 본문 섹션 3개 + 타임라인</p>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -652,11 +630,11 @@ beauty   = constraints × <span class="k">intention</span> ÷ noise</pre>
       <tr><td class="task">큰 제목</td><td class="how">serif <code>500</code>, 계층에 따른 크기, line-height <code>1.10-1.30</code></td></tr>
       <tr><td class="task">읽기 본문</td><td class="how">serif <code>400</code>, <code>9.5-10 pt</code>, line-height <code>1.55</code></td></tr>
       <tr><td class="task">숫자 강조</td><td class="how"><code>color: var(--brand)</code>, 볼드 아님</td></tr>
-      <tr><td class="task">두 섹션 구분</td><td class="how"><code>2.5pt</code> brand 좌측 바, 또는 <code>0.5pt</code> warm-gray 점선</td></tr>
-      <tr><td class="task">인용</td><td class="how">좌측 <code>2pt</code> brand solid + olive 텍스트</td></tr>
+      <tr><td class="task">두 섹션 구분</td><td class="how">먼저 여백을 사용하고, 경계가 꼭 명확해야 할 때만 <code>0.5pt</code> 중성 전체 너비 헤어라인</td></tr>
+      <tr><td class="task">인용</td><td class="how">olive 텍스트 + 이탤릭 또는 들여쓰기, 측면 선 없음</td></tr>
       <tr><td class="task">코드 표시</td><td class="how">Ivory bg + <code>4pt</code> radius + mono font, no border</td></tr>
       <tr><td class="task">기본 vs 보조</td><td class="how">기본: brand fill + ivory text; 보조: warm-sand + charcoal</td></tr>
-      <tr><td class="task">특별 카드 표시</td><td class="how"><code>border-left: 1.4pt solid var(--brand)</code>, 한 변만</td></tr>
+      <tr><td class="task">특별 카드 표시</td><td class="how">더 명확한 레이블이나 하나의 조용한 채움을 사용하고 강조 테두리는 추가하지 않음</td></tr>
       <tr><td class="task">섹션 시작</td><td class="how">Serif <code>500</code> · <code>15pt</code> · 크기 주도 계층, 장식 불필요</td></tr>
       <tr><td class="task">문서 표지</td><td class="how">단일 페이지, Display 크기 + 우측 정렬 저자/날짜 + 넉넉한 여백</td></tr>
       <tr><td class="task">핵심 수치 표시</td><td class="how">베이스라인 한 줄, 투명 배경, 컨테이너 없음 + serif 큰 숫자 + sans 작은 레이블</td></tr>
@@ -683,21 +661,21 @@ beauty   = constraints × <span class="k">intention</span> ÷ noise</pre>
         <p class="anti-topic">태그 색상</p>
         <div class="anti-pair">
           <p class="anti-line never"><span class="cue">지양</span><span>태그의 <code>rgba(27,54,93,0.18)</code>. WeasyPrint는 패딩과 글리프 영역을 다른 불투명도로 렌더링하여 이중 사각형을 만듭니다.</span></p>
-          <p class="anti-line instead"><span class="cue">권장</span><span>틴트 조회 표의 등가 솔리드 hex <code>#E4ECF5</code>. 렌더링이 깔끔하게 유지되고 색상이 안정적입니다.</span></p>
+          <p class="anti-line instead"><span class="cue">권장</span><span>등록된 기본 태그 색상 <code>#E4ECF5</code>. 렌더링이 깔끔하게 유지되고 색상이 안정적입니다.</span></p>
         </div>
       </div>
       <div class="anti-row">
         <p class="anti-topic">합성 볼드</p>
         <div class="anti-pair">
           <p class="anti-line never"><span class="cue">지양</span><span><code>font-weight: 600</code> 이상의 합성 볼드 제목. 획이 흐려지고 타이포그래피 품질이 떨어집니다.</span></p>
-          <p class="anti-line instead"><span class="cue">권장</span><span>본문 400, 제목 500 (실제 W05). 더 강한 존재감이 필요하면 크기나 brand 좌측 바를 사용합니다.</span></p>
+          <p class="anti-line instead"><span class="cue">권장</span><span>본문 400, 제목 500 (실제 W05). 더 강한 존재감이 필요하면 크기, 여백, 잉크 블루 텍스트를 사용합니다.</span></p>
         </div>
       </div>
       <div class="anti-row">
         <p class="anti-topic">섀도우</p>
         <div class="anti-pair">
           <p class="anti-line never"><span class="cue">지양</span><span>하드 드롭 섀도우 <code>0 2px 8px rgba(0,0,0,0.3)</code>. 시각적으로 무겁고 인쇄 시 어두운 얼룩으로 나타납니다.</span></p>
-          <p class="anti-line instead"><span class="cue">권장</span><span>링 섀도우 <code>0 0 0 1pt</code> 또는 위스퍼 <code>rgba 0.05</code>, 아니면 밝고 어두운 섹션을 교차시킵니다.</span></p>
+          <p class="anti-line instead"><span class="cue">권장</span><span>표면은 기본적으로 평평하게 두고 여백, 조용한 채움, 중성 헤어라인으로 계층을 만듭니다. 아주 옅은 그림자는 실제로 떠 있는 UI와 스크린샷에만 사용합니다.</span></p>
         </div>
       </div>
     </div>
