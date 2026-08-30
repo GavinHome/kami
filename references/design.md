@@ -11,7 +11,7 @@ This is not a UI framework. It is a constraint system for print, designed to kee
 1. Page background parchment `#f5f4ed`, never pure white
 2. Single accent: ink-blue `#1B365D`, no second chromatic color
 3. All grays warm-toned (yellow-brown undertone), no cool blue-grays
-4. English: serif for everything (headlines and body). Chinese: serif headlines, sans body. Sans only for UI elements (labels, eyebrows, meta) in both
+4. One serif family per page for headlines and body. Add a distinct sans only for genuine UI chrome
 5. Serif weight locked at 500, no bold
 6. Line-heights: tight headlines 1.1-1.3, dense body 1.4-1.45, reading body 1.5-1.55
 7. Letter-spacing: Chinese body 0.3pt for comfortable reading; English body 0; tracking only for short labels and overlines
@@ -266,10 +266,10 @@ A lifted surface is carried by the fill, not by an outline: `--ivory` against
 When a card needs more weight than its fill, strengthen its label or opening
 sentence. Do not add an accent edge or ring all four sides.
 
-Print radius: 2pt for chips, 4pt for blocks (cards, code, tables). Larger steps
-(8pt and up) belong to screen surfaces only, where `landing-page.html` sets its
-own scale; on a printed page they read as a web component dropped into a
-document.
+Print radii stay within 2-6pt and follow physical scale, from compact chips to
+large media frames. Larger steps (8pt and up) belong to screen surfaces only,
+where `landing-page.html` sets its own scale. Do not use radius alone to create
+emphasis.
 
 ### Subtractive rule
 

@@ -872,6 +872,80 @@ def test_shipped_surfaces_keep_subtractive_defaults() -> None:
           f"offenders: {', '.join(offenders)}")
 
 
+def test_print_radius_guidance_matches_shipped_range() -> None:
+    """The quick reference must describe the same restrained range as templates."""
+    cheatsheet = (REPO_ROOT / "CHEATSHEET.md").read_text(encoding="utf-8")
+    design = (REPO_ROOT / "references" / "design.md").read_text(encoding="utf-8")
+    check("print radius guidance matches shipped 2-6pt range",
+          "within `2-6pt`" in cheatsheet
+          and "within 2-6pt" in design
+          and "Do not invent intermediate steps" not in cheatsheet,
+          "radius guidance drifted from shipped template values")
+
+
+def test_public_site_typography_contract_matches_templates() -> None:
+    """Public prose must teach the one-serif contract templates actually ship."""
+    pages = [
+        REPO_ROOT / "index.html",
+        REPO_ROOT / "index-zh.html",
+        REPO_ROOT / "index-tw.html",
+        REPO_ROOT / "index-ja.html",
+        REPO_ROOT / "index-ko.html",
+    ]
+    stale = (
+        "Chinese uses serif headlines and sans body",
+        "中文标题用 serif、正文用 sans",
+        "中文標題用 serif、正文用 sans",
+        "중문은 제목에 세리프, 본문에 산세리프",
+    )
+    offenders = [
+        path.name for path in pages
+        if any(token in path.read_text(encoding="utf-8") for token in stale)
+    ]
+    design = (REPO_ROOT / "references" / "design.md").read_text(encoding="utf-8")
+    check("public typography contract matches one-serif templates",
+          not offenders
+          and "One serif family per page for headlines and body" in design,
+          f"offenders: {', '.join(offenders)}")
+
+
+def test_landing_page_ctas_stack_at_320px() -> None:
+    """Localized double CTAs must fit the smallest supported viewport."""
+    offenders = []
+    for path in sorted(TEMPLATES.glob("landing-page*.html")):
+        text = path.read_text(encoding="utf-8")
+        if not (
+            "@media (max-width: 360px)" in text
+            and ".hero-cta { flex-direction: column; align-items: stretch" in text
+            and ".btn-ghost { width: 100%; }" in text
+        ):
+            offenders.append(path.name)
+    check("landing page CTAs stack at 320px",
+          not offenders,
+          f"offenders: {', '.join(offenders)}")
+
+
+def test_public_site_og_dimensions_match_showcase_image() -> None:
+    """Social metadata must describe the image bytes platforms will fetch."""
+    image = (REPO_ROOT / "assets" / "showcase" / "kami-landing.png").read_bytes()
+    valid_png = image[:8] == b"\x89PNG\r\n\x1a\n" and image[12:16] == b"IHDR"
+    width = int.from_bytes(image[16:20], "big") if valid_png else 0
+    height = int.from_bytes(image[20:24], "big") if valid_png else 0
+    offenders = []
+    for name in ("index.html", "index-zh.html", "index-tw.html", "index-ja.html", "index-ko.html"):
+        text = (REPO_ROOT / name).read_text(encoding="utf-8")
+        declared_width = re.search(r'og:image:width" content="(\d+)"', text)
+        declared_height = re.search(r'og:image:height" content="(\d+)"', text)
+        if not (
+            declared_width and int(declared_width.group(1)) == width
+            and declared_height and int(declared_height.group(1)) == height
+        ):
+            offenders.append(name)
+    check("public OG dimensions match the showcase PNG",
+          valid_png and not offenders,
+          f"image={width}x{height} offenders={', '.join(offenders)}")
+
+
 def test_public_site_teaches_registered_tints_and_exact_radii() -> None:
     """Visible examples must describe tokens, not obsolete alpha recipes."""
     pages = [
@@ -2329,6 +2403,47 @@ def test_release_gate_resolves_only_the_tag_namespace() -> None:
           str(calls))
 
 
+def test_release_gate_requires_main_push_provenance() -> None:
+    from release_gate import check_run_issues
+
+    pr_run = [{
+        "headSha": "candidate",
+        "headBranch": "feature/release",
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+    }]
+    main_run = [{
+        "headSha": "candidate",
+        "headBranch": "main",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "success",
+    }]
+    check("release gate rejects successful PR-only checks",
+          bool(check_run_issues(pr_run, "candidate")), str(pr_run))
+    check("release gate accepts exact-SHA checks from a main push",
+          check_run_issues(main_run, "candidate") == [], str(main_run))
+
+
+def test_release_gate_requires_mainline_reachability() -> None:
+    import release_gate as release_gate_mod
+
+    original_git = release_gate_mod._git
+    original_run = release_gate_mod.subprocess.run
+    try:
+        release_gate_mod._git = lambda *args: "main-sha"
+        release_gate_mod.subprocess.run = lambda *args, **kwargs: subprocess.CompletedProcess(
+            args=args, returncode=1, stdout="", stderr="")
+        issues = release_gate_mod.mainline_issues("tag-sha", "origin/main")
+    finally:
+        release_gate_mod._git = original_git
+        release_gate_mod.subprocess.run = original_run
+    check("release gate rejects commits outside origin/main",
+          len(issues) == 1 and "not reachable from origin/main" in issues[0],
+          str(issues))
+
+
 def test_release_gate_compares_zip_payloads_not_container_bytes() -> None:
     from release_gate import archive_payload_issues
 
@@ -2375,6 +2490,21 @@ def test_release_workflow_reads_back_required_reactions() -> None:
           and "release reactions missing" in workflow
           and all(workflow.count(reaction) >= 2 for reaction in expected),
           "release workflow lacks a final reaction-set assertion")
+
+
+def test_release_workflow_preserves_published_version_payloads() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
+        encoding="utf-8")
+    check("release workflow requires main push provenance",
+          "--json headSha,headBranch,event,status,conclusion" in workflow
+          and "--main-ref origin/main" in workflow
+          and "--checks-json /tmp/kami-check-runs.json" in workflow,
+          "release workflow can accept non-main CI")
+    check("release workflow refuses same-version payload replacement",
+          "--clobber" not in workflow
+          and "gh release download" in workflow
+          and "existing kami.zip already matches this release" in workflow,
+          "release workflow can overwrite a published archive")
 
 
 def test_release_note_help_matches_placeholder_flow() -> None:

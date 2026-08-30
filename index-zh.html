@@ -19,8 +19,8 @@
   <meta property="og:description" content="Kami 紙：面向 AI 文档生成的温暖纸质感设计系统，以单一强调色、serif 层级与编辑级留白，收束成稳定的排版。">
   <meta property="og:url" content="https://kami.tw93.fun/index-zh.html">
   <meta property="og:image" content="https://kami.tw93.fun/assets/showcase/kami-landing.png">
-  <meta property="og:image:width" content="1555">
-  <meta property="og:image:height" content="1000">
+  <meta property="og:image:width" content="3110">
+  <meta property="og:image:height" content="2392">
   <meta property="og:locale" content="zh_CN">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Kami 紙：面向 AI Agent 的文档设计系统">
@@ -166,7 +166,7 @@
   <!-- ============ HERO ============ -->
   <header class="hero">
     <div class="eyebrow">
-      <span>Design System · v1.13.0<span class="eyebrow-date"> · 2026.08</span></span>
+      <span>Design System · v1.14.0<span class="eyebrow-date"> · 2026.08</span></span>
       <span class="hero-links">
         <nav class="lang-switch" aria-label="Language" data-lang-switch>
           <button class="lang-trigger" type="button" aria-expanded="false" data-lang-trigger>简体中文</button>
@@ -290,7 +290,7 @@ npx skills add tw93/kami/plugins/kami -a universal -g -y
       <li><span class="n">1</span><p>页面背景 parchment <code>#f5f4ed</code>，不用纯白</p></li>
       <li><span class="n">2</span><p>强调色只有油墨蓝 <code>#1B365D</code>，不引入第二种彩色</p></li>
       <li><span class="n">3</span><p>所有灰色暖调 (yellow-brown undertone)，禁止冷蓝灰</p></li>
-      <li><span class="n">4</span><p>英文 serif 通吃标题和正文，中文标题用 serif、正文用 sans</p></li>
+      <li><span class="n">4</span><p>一页只用一套 serif 承担标题和正文，只有真正的 UI 元素才另用 sans</p></li>
       <li><span class="n">5</span><p>Serif 正文 400，标题 500，不用合成 bold</p></li>
       <li><span class="n">6</span><p>行距三档：紧凑标题 1.1–1.3 / 密排 1.4–1.45 / 阅读 1.5–1.55</p></li>
       <li><span class="n">7</span><p>Tag 背景必须实色 hex，禁止 rgba（WeasyPrint 双层矩形 bug）</p></li>
@@ -343,15 +343,15 @@ npx skills add tw93/kami/plugins/kami -a universal -g -y
     <div class="section-head">
       <p class="section-num">04 · Typography</p>
       <h2 class="section-title">字体系统</h2>
-      <p class="section-lede">Serif 承担层级，sans 承担功能；serif 正文 400，标题 500。</p>
+      <p class="section-lede">一套 serif 同时承担层级和正文，mono 只用于代码与技术标签。</p>
     </div>
 
     <div class="family-grid">
       <div class="family serif">
         <p class="glyph">紙 Aa</p>
-        <p class="role">Serif · 标题</p>
+        <p class="role">Serif · 标题 + 正文</p>
         <p class="name">TsangerJinKai02 / Charter</p>
-        <p class="use">承担标题、引语与数字强调，中文取仓耳今楷，英文取 Charter。</p>
+        <p class="use">承担标题、正文、引语与数字强调，中文取仓耳今楷，英文取 Charter。</p>
       </div>
       <div class="family mono">
         <p class="glyph">&lt;/&gt;</p>
@@ -406,7 +406,7 @@ npx skills add tw93/kami/plugins/kami -a universal -g -y
       </div>
       <div class="type-row">
         <div class="type-label">Label</div>
-        <div class="type-sample label">Design System · v1.13.0</div>
+        <div class="type-sample label">Design System · v1.14.0</div>
         <div class="type-specs"><b>7.5–8 pt</b><br>weight 600<br>line 1.35</div>
       </div>
 

@@ -137,8 +137,9 @@ Any font-family that may render Chinese or Japanese must include a CJK fallback,
 
 ## Radius scale
 
-Print: `2pt` for chips, `4pt` for blocks. Screen: `8px` for blocks and
-`999px` only for pill actions. Do not invent intermediate steps for emphasis.
+Print radii stay within `2-6pt` and follow physical scale, from compact chips to
+large media frames. Screen: `8px` for blocks and `999px` only for pill actions.
+Do not use radius alone to create emphasis.
 
 ## Common CSS snippets
 
