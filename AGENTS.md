@@ -43,6 +43,11 @@ Only the entries whose role is not obvious from the filename:
   `kami_screenshot`, so an MCP-capable agent can diagnose, render, and verify
   without reading `SKILL.md`. Register
   with `claude mcp add kami -- python3 <checkout>/scripts/mcp_server.py`.
+- `scripts/math_render.py`, `scripts/mathjax_svg.js`, `scripts/ensure_mathjax.sh`,
+  `scripts/mathjax-runtime/` - strict LaTeX to MathJax SVG; `render.py` imports
+  `math_render`. This is the only Node dependency (Node 20 or 22+, refused otherwise),
+  installed on demand by `ensure_mathjax.sh` from the tracked `package-lock.json`;
+  all four ship in the package allowlist.
 - `scripts/site_facts.py` - public-site fact drift checks (install commands, version,
   template and diagram counts across `index*.html`, `README.md`, `llms.txt`), wired
   into `build.py --check`.
@@ -150,9 +155,9 @@ python3 scripts/tests/test_build.py          # zero-dependency test suite
   "no analytics" copy elsewhere.
 - Landing or documentation-site work follows `references/design.md` Section 11 «Landing
   Page (screen-first)»: its «Documentation site» subsection for the doc shell (sidebar
-  rail, on-this-page TOC, borderless prev/next pager), then Section 12 «Responsive
-  screenshot verification» (screenshot at 375px / 1280px per locale, objective
-  line-widow scan) before shipping.
+  rail, on-this-page TOC, borderless prev/next pager), then the «Responsive
+  screenshot verification» subsection that closes Section 12 (screenshot at 375px /
+  1280px per locale, objective line-widow scan) before shipping.
 - Content changes should avoid CSS churn unless layout behavior is part of the task.
 - Brand profile support is optional context. Keep public examples in `references/`; do
   not hard-code a maintainer's private local profile.
@@ -227,7 +232,8 @@ dependency.
 
 - `check.yml` has two jobs. `lint-and-test` runs dependency-light lint, metadata,
   and package gates. `verify-render` installs `weasyprint` / `pypdf` / `PyMuPDF` /
-  `Pygments`, then runs the full test suite before template verification. Tests that
+  `Pygments`, sets up Node 22 and runs `bash scripts/ensure_mathjax.sh`, then runs
+  the full test suite before template verification. Tests that
   need an optional render dependency use the suite's explicit `SKIP:` counter and
   fail when a CI-required dependency is unavailable; never turn a skip into `OK:`.
 - Validate workflow edits on a feature branch (push, watch the run go green) before
